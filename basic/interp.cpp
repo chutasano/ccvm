@@ -7,24 +7,24 @@
 
 using namespace std;
 
-int eval(E& e, map<string, int> vmap)
+int eval(E* e, map<string, int> vmap)
 {
     auto type = typeid(e);
-    if (type == typeid(Num))
+    if (type == typeid(Num*))
     {
-        return static_cast<Num>(e).value;
+        return static_cast<Num>(e*).value;
     }
-    else if (type == typeid(Read))
+    else if (type == typeid(Read*))
     {
         int val;
         cin >> val;
         return val;
     }
-    else if (type == typeid(Binop))
+    else if (type == typeid(Binop*))
     {
-        auto b = static_cast<Binop>(e);
-        int l = eval(b.l, vmap);
-        int r = eval(b.r, vmap);
+        auto b = static_cast<Binop*>(e);
+        int l = eval(b->l, vmap);
+        int r = eval(b->r, vmap);
         int result;
         switch (b.op)
         {

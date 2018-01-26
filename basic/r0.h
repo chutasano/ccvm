@@ -21,8 +21,8 @@ struct E
 
 struct P
 {
-    P(E& ee) : e(ee){ }
-    E& e;
+    P(E* ee) : e(ee) { }
+    E* e;
 };
 
 struct Num : E
@@ -40,18 +40,18 @@ struct Read : E
 
 struct Binop : E
 {
-    Binop(b_ops oper, E& left, E& right) : op(oper), l(left), r(right) { }
+    Binop(b_ops oper, E* left, E* right) : op(oper), l(left), r(right) { }
     b_ops op;
-    E& l;
-    E& r;
+    E* l;
+    E* r;
     int eval() {return 0; }
 };
 
 struct Unop : E
 {
-    Unop(u_ops oper, E& value) : op(oper), v(value) { }
+    Unop(u_ops oper, E* value) : op(oper), v(value) { }
     u_ops op;
-    E& v;
+    E* v;
     int eval() {return 0; }
 };
 
@@ -64,10 +64,10 @@ struct Var : E
 
 struct Let : E
 {
-    Let(std::string varname, E& vexp, E& bexp) : name(varname), ve(vexp), be(bexp) { }
+    Let(std::string varname, E* vexp, E* bexp) : name(varname), ve(vexp), be(bexp) { }
     std::string name;
-    E& ve;
-    E& be;
+    E* ve;
+    E* be;
     int eval() { return 0; }
 };
 
