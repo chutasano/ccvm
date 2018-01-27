@@ -9,65 +9,68 @@ using namespace std;
 
 int eval(E* e, map<string, int> vmap)
 {
-    auto type = typeid(e);
-    if (type == typeid(Num*))
+    if (typeid(*e) == typeid(Num))
     {
-        return static_cast<Num>(e*).value;
+        return static_cast<Num*>(e)->value;
     }
-    else if (type == typeid(Read*))
+    else if (typeid(*e) == typeid(Read))
     {
         int val;
         cin >> val;
         return val;
     }
-    else if (type == typeid(Binop*))
+    else if (typeid(*e) == typeid(Binop))
     {
         auto b = static_cast<Binop*>(e);
         int l = eval(b->l, vmap);
         int r = eval(b->r, vmap);
         int result;
-        switch (b.op)
+        switch (b->op)
         {
             case B_PLUS:
-                result = lval + rval;
+                result = l+ r;
                 break;
             default:
-                std::cout << "WARN: unknown binary operator: " << op << "\n";
+                std::cout << "WARN: unknown binary operator: " << b->op << "\n";
                 break;
         }
         return result;
     }
-    else if (type == typeid(Unop))
+    else if (typeid(*e) == typeid(Unop))
     {
-        auto u = static_cast<Unop>(e);
-        int val = eval(u.v, vmap);
+        auto u = static_cast<Unop*>(e);
+        int val = eval(u->v, vmap);
         int result;
-        switch (u.op)
+        switch (u->op)
         {
             case U_NEG:
                 result = -val;
                 break;
             default:
-                std::cout << "WARN: unknown unary operator: " << op << "\n";
+                std::cout << "WARN: unknown unary operator: " << u->op << "\n";
                 break;
         }
         return result;
     }
-    else if (type == typeid(Var))
+    else if (typeid(*e) == typeid(Var))
     {
-        auto v = static_cast<Var>(e);
-        return vmap.at(v.name);
+        auto v = static_cast<Var*>(e);
+        return vmap.at(v->name);
     }
-    else if (type == typeid(Let))
+    else if (typeid(*e) == typeid(Let))
     {
-        auto l = static_cast<Let>(e);
-        vmap[l.name] = eval(l.ve, vmap);
-        eval(be, vmap);
+        auto l = static_cast<Let*>(e);
+        vmap[l->name] = eval(l->ve, vmap);
+        return eval(l->be, vmap);
     }
     else
     {
+        if (typeid(e) == typeid(E*))
+        {
+            cerr << "HAHA";
+        }
         cerr << "ERROR: expression type invalid?";
-        exit (1);
+        return 0;
     }
 }
 
