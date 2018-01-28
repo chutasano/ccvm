@@ -4,7 +4,7 @@
 
 #include "compile.h"
 #include "interp.h"
-#include "r0.h"
+#include "rep/r0.h"
 #include "test.h"
 
 
@@ -55,14 +55,45 @@ void ts(string name)
 
 void t(E* e, int expect)
 {
-    P p = P(e);
-    if(testfunc(p, expect))
+    P p(e);
+    if (testfunc(p, expect))
     {
         cout << "  Test passed\n";
     }
     else
     {
         cout << "  Test failed!!!!!!!!!!!!!!!!1\n";
+    }
+}
+
+// test for uniqueness and uniquify
+void tu(E* e, bool unique)
+{
+    P p(e);
+    if (p.is_unique() && unique)
+    {
+        cout << "  Test passed, both unique\n";
+    }
+    else if (p.is_unique() && !unique)
+    {
+        cout << "  Test failed!!! Expected not unique, somehow got unique\n";
+    }
+    else if (!p.is_unique() && !unique)
+    {
+        cout << "  Test passed, both not unique, attempting to uniquify\n";
+        p.uniquify();
+        if (p.is_unique())
+        {
+            cout << "    Uniquify success\n";
+        }
+        else
+        {
+            cout << "    Uniquify failed!!!!!!!!!!\n";
+        }
+    }
+    else
+    {
+        cout << "  Test failed!!! Expected unique, somehow got not unique\n";
     }
 }
 
@@ -113,13 +144,16 @@ void test_all()
         t(twovaradd, 33);
     }
 
-    ts("Shadowing");
+    ts("Shadowing and Uniquify");
     {
         LET(shadowb, x, n23, vx);
         LET(shadow, x, n10, shadowb);
         t(shadow, 23);
         LET(shadowmore, x, nn1, shadow);
         t(shadowmore, 23);
+
+        tu(shadowmore, false);
+        tu(shadowb, true);
     }
 }
 

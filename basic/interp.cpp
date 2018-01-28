@@ -3,10 +3,13 @@
 #include <string>
 #include <typeinfo>
 
-#include "r0.h"
+#include "rep/r0.h"
 
 using namespace std;
 
+
+// I kept eval separate from the r0 classes because I felt that the interpreter
+// should be its own separate entity. Hence, I have to use some nasty casting.
 int eval(E* e, map<string, int> vmap)
 {
     if (typeid(*e) == typeid(Num))

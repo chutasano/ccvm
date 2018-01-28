@@ -1,20 +1,20 @@
-all: main
+CC=g++
+CFLAGS=-std=c++11 -Wall -g -c
+LDFLAGS=
+SOURCES=main.cpp test.cpp interp.cpp compile.cpp r0.cpp x0.cpp
+OBJECTS=$(SOURCES:.cpp=.o)
+EXECUTABLE=main
 
-main: main.o test.o interp.o compile.o
-	g++ -o main main.o test.o interp.o compile.o
+VPATH = rep
 
-main.o: main.cpp test.h interp.h compile.h r0.h
-	g++ -std=c++11 -Wall -g -c main.cpp -o main.o
+all: $(SOURCES) $(EXECUTABLE)
 
-test.o: test.cpp test.h interp.h compile.h r0.h
-	g++ -std=c++11 -Wall -g -c test.cpp -o test.o
+$(EXECUTABLE): $(OBJECTS)
+	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
 
-interp.o: interp.cpp interp.h r0.h
-	g++ -std=c++11 -Wall -g -c interp.cpp -o interp.o
-
-compile.o: compile.cpp compile.h r0.h
-	g++ -std=c++11 -Wall -g -c compile.cpp -o compile.o
+.cpp.o:
+	$(CC) $(CFLAGS) $< -o $@
 
 clean:
-	rm -f *.o main
+	rm -f *.o $(EXECUTABLE)
 

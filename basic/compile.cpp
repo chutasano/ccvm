@@ -2,17 +2,17 @@
 #include <string>
 #include <typeinfo>
 
-#include "r0.h"
+#include "rep/r0.h"
 
 using namespace std;
 
-void uniquify(P p)
-{
-}
+
 
 bool compile(P p)
 {
-    uniquify(p);
+    p.uniquify();
+    // p->something else
+    //
     return true;
 }
 
