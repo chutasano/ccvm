@@ -2,4 +2,4 @@
 
 #include "rep/r0.h"
 
-bool test_compile(P p, int expect);
+bool test_compile(r0::P p, int expect);

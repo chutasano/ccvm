@@ -8,7 +8,7 @@ using namespace std;
 
 
 
-bool compile(P p)
+bool compile(r0::P p)
 {
     p.uniquify();
     // p->something else
@@ -16,14 +16,14 @@ bool compile(P p)
     return true;
 }
 
-int compile_run(P p)
+int compile_run(r0::P p)
 {
 //    system("gcc file.s -o file")
 //    TODO
     return 1;
 }
 
-bool test_compile(P p, int expect)
+bool test_compile(r0::P p, int expect)
 {
     int actual = compile_run(p);
     return expect == actual;

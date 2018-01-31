@@ -8,6 +8,7 @@
 #include "r0.h"
 
 using namespace std;
+using namespace r0;
 
 //#define DEBUG
 

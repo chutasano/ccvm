@@ -6,7 +6,7 @@
 #include "rep/r0.h"
 
 using namespace std;
-
+using namespace r0;
 
 // I kept eval separate from the r0 classes because I felt that the interpreter
 // should be its own separate entity. Hence, I have to use some nasty casting.

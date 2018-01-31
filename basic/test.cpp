@@ -18,24 +18,24 @@
 // positive num is a bit easier. It will figure out the name by simply
 // using the value of the initialized num
 // NUM(1) -> n1
-#define NUM(a) UPTR(Num, n ## a, a)
+#define NUM(a) UPTR(r0::Num, n ## a, a)
 
 // I had to separate out negatives because - signs cannot be used for var
 // names. a has to be a positive number
 // NNUM(1) -> nn1
-#define NNUM(a) UPTR(Num, nn ## a, -a)
+#define NNUM(a) UPTR(r0::Num, nn ## a, -a)
 
 // VAR(x) -> vx
-#define VAR(name) UPTR(Var, v ## name, #name)
+#define VAR(name) UPTR(r0::Var, v ## name, #name)
 
 // LET(name, var, vexp, bexp) -> name (nothing special or cool)
-#define LET(name, var, ...) UPTR(Let, name, #var, __VA_ARGS__)
+#define LET(name, var, ...) UPTR(r0::Let, name, #var, __VA_ARGS__)
 
 // BINOP(name, operator, lexp, rexp) -> name (nothing special)
-#define BINOP(...) UPTR(Binop, __VA_ARGS__)
+#define BINOP(...) UPTR(r0::Binop, __VA_ARGS__)
 
 // UNOP
-#define UNOP(...) UPTR(Unop, __VA_ARGS__)
+#define UNOP(...) UPTR(r0::Unop, __VA_ARGS__)
 
 // operation specifics, might be too much work to maintain if we add more operators
 
@@ -46,16 +46,16 @@
 
 using namespace std;
 
-std::function<bool(P, int)> testfunc;
+std::function<bool(r0::P, int)> testfunc;
 
 void ts(string name)
 {
     cout << endl << "Test suite: " << name << endl;
 }
 
-void t(E* e, int expect)
+void t(r0::E* e, int expect)
 {
-    P p(e);
+    r0::P p(e);
     if (testfunc(p, expect))
     {
         cout << "  Test passed\n";
@@ -67,9 +67,9 @@ void t(E* e, int expect)
 }
 
 // test for uniqueness and uniquify
-void tu(E* e, bool unique)
+void tu(r0::E* e, bool unique)
 {
-    P p(e);
+    r0::P p(e);
     if (p.is_unique() && unique)
     {
         cout << "  Test passed, both unique\n";
