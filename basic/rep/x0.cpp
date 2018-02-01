@@ -9,7 +9,7 @@
 using namespace std;
 using namespace x0;
 
-string X0::to_asm()
+string P::to_asm()
 {
     stringstream ss;
     ss  << ".globl main" << endl

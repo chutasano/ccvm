@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "c0.h"
 #include "operators.h"
 
 namespace r0
@@ -14,15 +15,16 @@ namespace r0
         virtual ~E() { }
         virtual std::vector<E*> get_childs() = 0;
         virtual void uniquify(std::map<std::string, std::string>) = 0;
+        virtual c0::S to_c0() = 0;
     };
 
     struct P
     {
         P(E* ee) : e(ee) { }
         E* e;
-
-        void uniquify();
         bool is_unique();
+        void uniquify();
+        c0::P flatten();
     };
 
     struct Num : E
@@ -31,6 +33,7 @@ namespace r0
         int value;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::map<std::string, std::string>);
+        c0::S to_c0();
     };
 
     struct Read : E
@@ -38,6 +41,7 @@ namespace r0
         Read() { }
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::map<std::string, std::string>);
+        c0::S to_c0();
     };
 
     struct Binop : E
@@ -48,6 +52,7 @@ namespace r0
         E* r;
         std::vector<E*> get_childs() { return {l, r}; }
         void uniquify(std::map<std::string, std::string>);
+        c0::S to_c0();
     };
 
     struct Unop : E
@@ -57,6 +62,7 @@ namespace r0
         E* v;
         std::vector<E*> get_childs() { return {v}; }
         void uniquify(std::map<std::string, std::string>);
+        c0::S to_c0();
     };
 
     struct Var : E
@@ -65,6 +71,7 @@ namespace r0
         std::string name;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::map<std::string, std::string>);
+        c0::S to_c0();
     };
 
     struct Let : E
@@ -75,6 +82,7 @@ namespace r0
         E* be;
         std::vector<E*> get_childs() { return {ve, be}; }
         void uniquify(std::map<std::string, std::string>);
+        c0::S to_c0();
     };
 
 }

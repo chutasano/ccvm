@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "asm.h"
+
 namespace x0
 {
     struct arg
@@ -70,12 +72,14 @@ namespace x0
         std::string label;
         std::string to_asm();
     };
+
+    // program container for X0
+    struct P
+    {
+        std::vector<I*> instr;
+        std::string to_asm();
+    };
+
 }
 
-// program container for X0
-struct X0
-{
-    std::vector<x0::I*> instr;
-    std::string to_asm();
-};
 

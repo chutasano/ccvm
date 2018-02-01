@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "c0.h"
 #include "r0.h"
 
 using namespace std;
@@ -43,12 +42,6 @@ bool P::is_unique()
     }
     set<string> uniquenames(varnames.begin(), varnames.end());
     return varnames.size() == uniquenames.size();
-}
-
-c0::P flatten()
-{
-    vector<string> vars;
-    //return c0::P();
 }
 
 void Num::uniquify(map<string, string> m)
@@ -107,36 +100,3 @@ void Let::uniquify(map<string, string> m)
     this->name = m[this->name];
     this->be->uniquify(m);
 }
-
-
-c0::S Num::to_c0()
-{
-
-}
-
-c0::S Read::to_c0()
-{
-
-}
-
-c0::S Binop::to_c0()
-{
-
-}
-
-c0::S Unop::to_c0()
-{
-
-}
-
-c0::S Var::to_c0()
-{
-
-}
-
-c0::S Let::to_c0()
-{
-
-}
-
-
