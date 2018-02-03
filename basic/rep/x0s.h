@@ -35,8 +35,8 @@ namespace x0s
 
     struct Con : Arg
     {
-        Con(int c) : val(c) { }
-        int val;
+        Con(int64_t c) : val(c) { }
+        int64_t val;
         x0::Arg* assign();
     };
 

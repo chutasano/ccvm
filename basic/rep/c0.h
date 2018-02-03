@@ -32,8 +32,8 @@ namespace c0
 
     struct Num : Arg
     {
-        Num(int v) { value = v; }
-        int value;
+        Num(int64_t v) { value = v; }
+        int64_t value;
         x0s::Arg* to_arg();
     };
 

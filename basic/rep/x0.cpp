@@ -1,4 +1,6 @@
 #include <iomanip>
+#include <iostream>
+#include <typeinfo>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -29,7 +31,7 @@ string Reg::to_string()
 string Con::to_string()
 {
     stringstream ss;
-    ss << hex << "0x" << this->val;
+    ss << hex << "$0x" << this->val;
     return ss.str();
 }
 
@@ -74,4 +76,26 @@ string Ret::to_asm()
 {
     return "MOVQ\t" + this->arg->to_string() + ", %rax\n" + 
            "    RETQ";
+}
+
+void P::fix()
+{
+    for (auto it = begin(this->instr); it != end(this->instr); ++it)
+    {
+        // I think it's okay to do a little hack here; only two arg needs fixing
+        // so I'd need a bunch of stubs if I were to do it OO
+        if (typeid(**it) == typeid(TwoArg))
+        {
+            auto i = static_cast<TwoArg*>(*it);
+            // we need to fix two args both being memory references
+            if (typeid(*(i->src)) == typeid(Mem) &&
+                typeid(*(i->dst)) == typeid(Mem))
+            {
+                this->instr.insert(it, new TwoArg(MOVQ, i->src, new Reg("rax")));
+                i->src = new Reg("rax");
+                cout << "FIXING!!!!!!!!\n";
+            }
+        }
+
+    }
 }

@@ -27,8 +27,8 @@ namespace x0
 
     struct Con : Arg
     {
-        Con(int c) : val(c) { }
-        int val;
+        Con(int64_t c) : val(c) { }
+        int64_t val;
         std::string to_string();
     };
 
@@ -98,6 +98,7 @@ namespace x0
         P(std::vector<I*> is) : instr(is) { }
         std::vector<I*> instr;
         std::string to_asm();
+        void fix();
     };
 
 }

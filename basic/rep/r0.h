@@ -29,8 +29,8 @@ namespace r0
 
     struct Num : E
     {
-        Num(int v) { value = v; }
-        int value;
+        Num(int64_t v) { value = v; }
+        int64_t value;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::map<std::string, std::string>);
         c0::Arg* to_c0();
