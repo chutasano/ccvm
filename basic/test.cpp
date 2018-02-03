@@ -110,8 +110,6 @@ void test_all()
     NUM(23);
     NNUM(1);
 
-    VAR(x);
-    VAR(y);
 
     ts("Num");
     {
@@ -137,6 +135,8 @@ void test_all()
 
     ts("Variable lookup");
     {
+        VAR(x);
+        VAR(y);
         LET(onevar, x, n10, vx);
         t(onevar, 10);
         PLUS(vx, vy);
@@ -147,13 +147,25 @@ void test_all()
 
     ts("Shadowing and Uniquify");
     {
+        VAR(x);
         LET(shadowb, x, n23, vx);
         LET(shadow, x, n10, shadowb);
         t(shadow, 23);
         LET(shadowmore, x, nn1, shadow);
         t(shadowmore, 23);
-
+    }
+    {
+        VAR(x);
+        LET(shadowb, x, n23, vx);
+        LET(shadow, x, n10, shadowb);
+        LET(shadowmore, x, nn1, shadow);
         tu(shadowmore, false);
+    }
+    {
+        VAR(x);
+        LET(shadowb, x, n23, vx);
+        LET(shadow, x, n10, shadowb);
+        LET(shadowmore, x, nn1, shadow);
         tu(shadowb, true);
     }
 }

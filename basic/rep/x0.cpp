@@ -87,7 +87,7 @@ void P::fix()
 {
     for (auto it = begin(this->instr); it != end(this->instr); ++it)
     {
-        // I think it's okay to do a little hack here; only two arg needs fixing
+        // I think it's okay to do a little hack here; only TwoArg needs fixing
         // so I'd need a bunch of stubs if I were to do it OO
         if (typeid(**it) == typeid(TwoArg))
         {
@@ -98,7 +98,11 @@ void P::fix()
             {
                 this->instr.insert(it, new TwoArg(MOVQ, i->src, new Reg("rax")));
                 i->src = new Reg("rax");
-                cout << "FIXING!!!!!!!!\n";
+                // iterator can lose validity, which sucks
+                // for now i'll start it from beginning
+                // in the future it'll be better to save a backup of the previous
+                // iterator and start from that
+                it = begin(this->instr);
             }
         }
 
