@@ -87,8 +87,7 @@ namespace x0
 
     struct Ret : I
     {
-        Ret(Arg* a) : arg(a) {  }
-        Arg* arg;
+        Ret() {  }
         std::string to_asm();
     };
 

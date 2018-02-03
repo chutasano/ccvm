@@ -29,7 +29,7 @@ vector<x0s::I*> Arg::select(x0s::Dst* var)
 
 vector<x0s::I*> Read::select(x0s::Dst* var)
 {
-    x0s::Call* callq = new x0s::Call("_read");
+    x0s::Call* callq = new x0s::Call("_lang_read");
     x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
             new x0s::Reg("rax"),
             var);

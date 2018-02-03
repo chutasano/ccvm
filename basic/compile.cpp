@@ -5,7 +5,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include <array>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <typeinfo>
 
@@ -45,9 +47,9 @@ string compile(r0::P p)
     }
     else if (pid == 0)
     {
-        char *cname = new char[name.size()+1];
-        char *cruntime = new char[runtime.size()+1];
-        char *cpname = new char[pname.size()+1];
+        char cname[name.size()+1];
+        char cruntime[runtime.size()+1];
+        char cpname[pname.size()+1];
         strncpy(cname, name.c_str(), name.size());
         strncpy(cruntime, runtime.c_str(), runtime.size());
         strncpy(cpname, pname.c_str(), pname.size());
@@ -70,18 +72,21 @@ string compile(r0::P p)
 int compile_run(r0::P p)
 {
     pid_t pid;
-    string pname = compile(p);
-    if ((pid = fork()) == -1)
+    string pname = "./" + compile(p);
+    array<char, 128> buf;
+    string result;
+    shared_ptr<FILE> pipe(popen(pname.c_str(), "r"), pclose);
+    if (!pipe)
     {
+        cerr << "Failed to make pipe\n";
         exit(1);
     }
-    else if (pid == 0)
+    while (!feof(pipe.get()))
     {
-        execl(pname.c_str(), pname.c_str(), NULL);
+        if (fgets(buf.data(), 128, pipe.get()) != nullptr)
+            result += buf.data();
     }
-    int meow;
-    wait(&meow);
-    int ret = WEXITSTATUS(meow);
+    int64_t ret = stol(result, nullptr);
     return ret;
 }
 

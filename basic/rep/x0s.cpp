@@ -1,5 +1,6 @@
 #include <map>
 #include <string>
+#include <typeinfo>
 #include <vector>
 
 #include "asm.h"
@@ -36,11 +37,19 @@ x0::P P::assign()
     ins.push_back(new x0::TwoArg(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     for (auto iptr : this->instr)
     {
-        ins.push_back(iptr->assign());
+        // temp hack while we do a bad var->mem implementation
+        if (typeid(*iptr) == typeid(Ret))
+        {
+            auto r = static_cast<Ret*>(iptr);
+            ins.push_back(new x0::TwoArg(MOVQ, r->arg->assign(), new x0::Reg("rax")));
+            ins.push_back(new x0::TwoArg(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+            ins.push_back(new x0::Ret());
+        }
+        else
+        {
+            ins.push_back(iptr->assign());
+        }
     }
-    auto it = ins.end() - 1;
-    // evil hack assuming ret happens at the end, FIXME?
-    ins.insert(it, new x0::TwoArg(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     return x0::P(ins);
 }
 
@@ -87,6 +96,7 @@ x0::I* Call::assign()
 
 x0::I* Ret::assign()
 {
-    return new x0::Ret(this->arg->assign());
+    // TODO fix
+    return new x0::Ret();
 }
 

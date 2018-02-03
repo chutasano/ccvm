@@ -74,8 +74,13 @@ string Call::to_asm()
 
 string Ret::to_asm()
 {
-    return "MOVQ\t" + this->arg->to_string() + ", %rax\n" + 
-           "    RETQ";
+    // prints out the final value because simply returning
+    // won't give us 64 bits (Linux gives 8 bits)
+    // this should be processed by the calee of the program
+    // in automated tests
+    return "MOVQ\t%rax, %rdi\n"
+       "    CALLQ\t_lang_print\n"
+       "    RETQ";
 }
 
 void P::fix()

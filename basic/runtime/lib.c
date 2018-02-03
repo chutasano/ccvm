@@ -1,16 +1,15 @@
 #include <stdio.h>
+#include <stdint.h>
 
-typedef long long int int64_t ;
-
-int64_t lang_read()
+int64_t _lang_read()
 {
     int64_t a;
-    scanf("%lld", &a);
+    scanf("%ld", &a);
     return a;
 }
 
-void lang_print(int64_t num)
+void _lang_print(int64_t num)
 {
-    printf("%lld\n", num);
+    printf("%ld\n", num);
 }
 
