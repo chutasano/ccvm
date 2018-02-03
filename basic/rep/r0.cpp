@@ -1,3 +1,4 @@
+#include <iostream>
 #include <map>
 #include <queue>
 #include <typeinfo>
@@ -13,13 +14,28 @@ using namespace r0;
 
 //#define DEBUG
 
-map<string, unsigned int> count;
+static map<string, unsigned int> count;
+
+string gensym(string sym)
+{
+    unsigned int id = 0;
+    auto it = count.find(sym);
+    if (it != count.end())
+    {
+        id = ++(it->second);
+    }
+    else
+    {
+        count[sym] = 0;
+    }
+    return sym + "_" + to_string(id);
+}
 
 void P::uniquify()
 {
     count.clear();
     map<string, string> varmap;
-    e->uniquify(varmap);
+    this->e->uniquify(varmap);
 }
 
 bool P::is_unique()
@@ -45,11 +61,6 @@ bool P::is_unique()
     return varnames.size() == uniquenames.size();
 }
 
-c0::P flatten()
-{
-    vector<string> vars;
-    //return c0::P();
-}
 
 void Num::uniquify(map<string, string> m)
 {
@@ -90,53 +101,66 @@ void Let::uniquify(map<string, string> m)
     // uniquify the var expression first because the var expression should not
     // have access to the var it's trying to define
     this->ve->uniquify(m);
-    unsigned int id = 0;
-    auto it = count.find(this->name);
-    if (it != count.end())
-    {
-        id = ++(it->second);
-    }
-    else
-    {
-        count[this->name] = 0;
-    }
+
+    m[this->name] = gensym(this->name);
 #ifdef DEBUG
-    cout << "Uniquify let: changing " << this->name << " to id " << id << endl;
+    cout << "Uniquify let: changing " << this->name << " to " << m[this->name] << endl;
 #endif
-    m[this->name] = this->name + "_" + to_string(id);
     this->name = m[this->name];
     this->be->uniquify(m);
 }
 
+vector<string> vars;
+vector<c0::S> stmts;
 
-c0::S Num::to_c0()
+c0::P P::flatten()
 {
-
+    c0::Arg* a = this->e->to_c0();
+    return c0::P(vars, stmts, a);
 }
 
-c0::S Read::to_c0()
-{
 
+c0::Arg* Num::to_c0()
+{
+     return new c0::Num(this->value);
 }
 
-c0::S Binop::to_c0()
+c0::Arg* Read::to_c0()
 {
-
+    string s = gensym("r0Read");
+    vars.push_back(s);
+    stmts.push_back(c0::S(s, new c0::Read()));
+    return new c0::Var(s);
 }
 
-c0::S Unop::to_c0()
+c0::Arg* Binop::to_c0()
 {
-
+    string s = gensym("r0Binop");
+    vars.push_back(s);
+    stmts.push_back(c0::S(s, new c0::Binop(this->op,
+                    this->l->to_c0(),
+                    this->r->to_c0())));
+    return new c0::Var(s);
 }
 
-c0::S Var::to_c0()
+c0::Arg* Unop::to_c0()
 {
-
+    string s = gensym("r0Unop");
+    vars.push_back(s);
+    stmts.push_back(c0::S(s, new c0::Unop(this->op, this->v->to_c0())));
+    return new c0::Var(s);
 }
 
-c0::S Let::to_c0()
+c0::Arg* Var::to_c0()
 {
+    return new c0::Var(this->name);
+}
 
+c0::Arg* Let::to_c0()
+{
+    stmts.push_back(c0::S(this->name, this->ve->to_c0()));
+    vars.push_back(this->name);
+    return this->be->to_c0();
 }
 
 

@@ -1,102 +1,93 @@
-#include <map>
-#include <queue>
-#include <typeinfo>
-#include <set>
+#include <iostream>
 #include <string>
 #include <vector>
 
-#include "r0.h"
+#include "c0.h"
 
 using namespace std;
-using namespace r0;
+using namespace c0;
 
-//#define DEBUG
+static map<string, unsigned int> count;
 
-map<string, unsigned int> count;
-
-void P::uniquify()
+x0s::Arg* Var::to_arg()
 {
-    count.clear();
-    map<string, string> varmap;
-    e->uniquify(varmap);
+    return new x0s::Var(this->name);
 }
 
-bool P::is_unique()
+x0s::Arg* Num::to_arg()
 {
-    vector<string> varnames; // FIXME is vector overkill for finding duplicates?
-    queue<E*> nodes;
-    nodes.push(e);
-    while (!nodes.empty())
+    return new x0s::Con(this->value);
+}
+
+vector<x0s::I*> Arg::select(x0s::Dst* var)
+{
+    x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
+            this->to_arg(),
+            var);
+    return { movq };
+}
+
+vector<x0s::I*> Read::select(x0s::Dst* var)
+{
+    x0s::Call* callq = new x0s::Call("_read");
+    x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
+            new x0s::Reg("rax"),
+            var);
+    return { callq, movq };
+}
+
+vector<x0s::I*> Binop::select(x0s::Dst* var)
+{
+    switch(this->op)
     {
-        E* node = nodes.front();
-        nodes.pop();
-        if (typeid(*node) == typeid(Let)) // track all declared vars
-        {
-            varnames.push_back((static_cast<Let*>(node)->name));
-        }
-        auto newnodes = node->get_childs();
-        for (auto n : newnodes)
-        {
-            nodes.push(n);
-        }
-    }
-    set<string> uniquenames(varnames.begin(), varnames.end());
-    return varnames.size() == uniquenames.size();
-}
-
-void Num::uniquify(map<string, string> m)
-{
-    return;
-}
-
-void Read::uniquify(map<string, string> m)
-{
-    return;
-}
-
-void Binop::uniquify(map<string, string> m)
-{
-    this->l->uniquify(m);
-    this->r->uniquify(m);
-}
-
-void Unop::uniquify(map<string, string> m)
-{
-    this->v->uniquify(m);
-}
-
-void Var::uniquify(map<string, string> m)
-{
-    auto it = m.find(this->name); // FIXME const iterator will be the "right"
-                                  // thing to do instead of auto
-    if (it != m.end())
-    {
-#ifdef DEBUG
-        cout << "Uniquify var: changing " << this->name << " to " << it->second << endl;
-#endif
-        this->name = it->second;
+        case B_PLUS:
+            {
+                x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
+                        this->l->to_arg(),
+                        var);
+                x0s::TwoArg* addq = new x0s::TwoArg(ADDQ,
+                        this->r->to_arg(),
+                        var);
+                return { movq, addq };
+            }
+        default:
+            std::cout << "WARN: unknown binary operator: " << this->op << "\n";
+            return { };
     }
 }
 
-void Let::uniquify(map<string, string> m)
+vector<x0s::I*> Unop::select(x0s::Dst* var)
 {
-    // uniquify the var expression first because the var expression should not
-    // have access to the var it's trying to define
-    this->ve->uniquify(m);
-    unsigned int id = 0;
-    auto it = count.find(this->name);
-    if (it != count.end())
+    switch(this->op)
     {
-        id = ++(it->second);
+        case U_NEG:
+            {
+                x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
+                        this->v->to_arg(),
+                        var);
+                x0s::OneDst* negq = new x0s::OneDst(NEGQ, var);
+                return { movq, negq };
+            }
+        default:
+            std::cout << "WARN: unknown unary operator: " << this->op << "\n";
+            return { };
     }
-    else
-    {
-        count[this->name] = 0;
-    }
-#ifdef DEBUG
-    cout << "Uniquify let: changing " << this->name << " to id " << id << endl;
-#endif
-    m[this->name] = this->name + "_" + to_string(id);
-    this->name = m[this->name];
-    this->be->uniquify(m);
 }
+
+vector<x0s::I*> S::select()
+{
+    return this->e->select(new x0s::Var(this->v));
+}
+
+x0s::P P::select()
+{
+    std::vector<x0s::I*> instrs;
+    for (auto s : this->stmts)
+    {
+        auto is = s.select();
+        instrs.insert(end(instrs), begin(is), end(is));
+    }
+    instrs.push_back(new x0s::Ret(this->arg->to_arg()));
+    return x0s::P(instrs, this->vars);
+}
+

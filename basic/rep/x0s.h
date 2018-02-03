@@ -4,12 +4,13 @@
 #include <vector>
 
 #include "asm.h"
+#include "x0.h"
 
-namespace x0
+namespace x0s
 {
     struct Arg
     {
-        virtual std::string to_string() = 0;
+        virtual x0::Arg* assign() = 0;
     };
 
     struct Dst : Arg
@@ -22,35 +23,34 @@ namespace x0
         // the register name without the %
         // example: rax
         std::string name;
-        std::string to_string();
+        x0::Arg* assign();
+    };
+
+    struct Var : Dst
+    {
+        Var(std::string n) : var(n) { }
+        std::string var;
+        x0::Arg* assign();
     };
 
     struct Con : Arg
     {
         Con(int c) : val(c) { }
         int val;
-        std::string to_string();
-    };
-
-    struct Mem : Arg
-    {
-        Mem(std::string n, int o) : regname(n), offset(o) { }
-        std::string regname;
-        int offset;
-        std::string to_string();
+        x0::Arg* assign();
     };
 
     // base class for X0 instructions
     struct I
     {
-        virtual std::string to_asm() = 0;
+        virtual x0::I* assign() = 0;
     };
 
     struct NoArg : I
     {
         NoArg(no_arg i) : instr(i) { }
         no_arg instr;
-        std::string to_asm();
+        x0::I* assign();
     };
 
     struct OneSrc : I
@@ -58,7 +58,7 @@ namespace x0
         OneSrc(one_src i, Arg* s) : instr(i), src(s) { }
         one_src instr;
         Arg* src;
-        std::string to_asm();
+        x0::I* assign();
     };
 
     struct OneDst : I
@@ -66,7 +66,7 @@ namespace x0
         OneDst(one_dst i, Dst* d) : instr(i), dst(d) { }
         one_dst instr;
         Dst* dst;
-        std::string to_asm();
+        x0::I* assign();
     };
 
     struct TwoArg : I
@@ -75,29 +75,30 @@ namespace x0
         two_arg instr;
         Arg* src;
         Dst* dst;
-        std::string to_asm();
+        x0::I* assign();
     };
 
     struct Call : I
     {
         Call(std::string l) : label(l) { }
         std::string label;
-        std::string to_asm();
+        x0::I* assign();
     };
 
     struct Ret : I
     {
-        Ret(Arg* a) : arg(a) {  }
+        Ret(Arg* a) : arg(a) { }
         Arg* arg;
-        std::string to_asm();
+        x0::I* assign();
     };
 
     // program container for X0
     struct P
     {
-        P(std::vector<I*> is) : instr(is) { }
+        P(std::vector<I*> i, std::vector<std::string> v) : instr(i), vars(v) { }
         std::vector<I*> instr;
-        std::string to_asm();
+        std::vector<std::string> vars;
+        x0::P assign();
     };
 
 }

@@ -21,19 +21,19 @@ string P::to_asm()
     return ss.str();
 }
 
-string reg::to_string()
+string Reg::to_string()
 {
     return "%" + this->name;
 }
 
-string con::to_string()
+string Con::to_string()
 {
     stringstream ss;
     ss << hex << "0x" << this->val;
     return ss.str();
 }
 
-string mem::to_string()
+string Mem::to_string()
 {
     return std::to_string(this->offset) + "(%" + regname + ")";
 }
@@ -43,7 +43,12 @@ string NoArg::to_asm()
     return i2string(this->instr);
 }
 
-string OneArg::to_asm()
+string OneSrc::to_asm()
+{
+    return i2string(this->instr) + string("\t") + this->src->to_string();
+}
+
+string OneDst::to_asm()
 {
     return i2string(this->instr) + string("\t") + this->dst->to_string();
 }
@@ -58,3 +63,8 @@ string Call::to_asm()
     return "CALLQ\t" + this->label;
 }
 
+string Ret::to_asm()
+{
+    return "MOVQ\t" + this->arg->to_string() + "%rax\n" + 
+           "RETQ";
+}
