@@ -35,7 +35,14 @@ string Con::to_string()
 
 string Mem::to_string()
 {
-    return std::to_string(this->offset) + "(%" + regname + ")";
+    if (this->offset == 0)
+    {
+        return "(%" + regname + ")";
+    }
+    else
+    {
+        return std::to_string(this->offset) + "(%" + regname + ")";
+    }
 }
 
 string NoArg::to_asm()
@@ -65,6 +72,6 @@ string Call::to_asm()
 
 string Ret::to_asm()
 {
-    return "MOVQ\t" + this->arg->to_string() + "%rax\n" + 
-           "RETQ";
+    return "MOVQ\t" + this->arg->to_string() + ", %rax\n" + 
+           "    RETQ";
 }

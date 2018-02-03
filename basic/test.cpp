@@ -100,7 +100,8 @@ void tu(r0::E* e, bool unique)
 void test_all()
 {
     // TODO switch to test both once compiler is implemented
-    testfunc = test_interp;
+    //testfunc = test_interp;
+    testfunc = test_compile;
 
     cout << "Start Tests\n";
 
