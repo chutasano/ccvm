@@ -190,8 +190,8 @@ void test_all()
         LET(shadow, x, n10, shadowb);
         tu(shadowb, true);
     }
-    const int64_t exponent = 5;
-    ts("Power: ");
+    const int64_t exponent = 13;
+    ts("Power");
     {
         // god why doesn't C have int powers
         int64_t ans = 1;
