@@ -73,6 +73,7 @@ x0::P P::assign()
             ins.push_back(new x0::TwoArg(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
             ins.push_back(new x0::Ret());
         }
+        else
         {
             ins.push_back(iptr->assign());
         }
