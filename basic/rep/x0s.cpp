@@ -24,32 +24,44 @@ static const vector<string> regs
 
 const assign_mode a_mode = ASG_NAIVE;
 
-static int get_offset(string v)
-{
-    static int worst = 8;
-    static map<string, int> m;
-    auto it = m.find(v);
-    int offset;
-    if (it != m.end())
-    {
-        offset = it->second;
-    }
-    else
-    {
-        offset = worst - 8;
-        worst = offset;
-        m[v] = worst;
-    }
-    return offset;
-}
-
 x0::P P::assign()
 {
     Graph::NodeList in;
+    // generate nodes
     for (string s : vars)
     {
         in.add_node(s);
     }
+    // get lifetime of all vars
+    map<string, pair<int, int> > lifetime;
+    int i = 1; // let i start at 1 to exploit the default constructor
+               // of std::pair to check for initial existance
+    for (auto iptr : this->instr)
+    {
+        const auto &slist = iptr->get_vars();
+        for (string s : slist)
+        {
+            auto entry = lifetime[s];
+            if (entry.first == 0) // must be new
+            {
+                lifetime[s] = make_pair(i, i);
+            }
+            else
+            {
+                lifetime[s] = make_pair(entry.first, i);
+            }
+        }
+        i++;
+    }
+    //use lifetime to make edges
+    for (auto it = lifetime.begin(); it!=lifetime.end(); ++it)
+    {
+#ifdef DEBUG
+        cout << it->first << " lives from " << it->second.first << " to " << it->second.second << endl;
+#endif
+
+    }
+
     in.assign(regs.size(), a_mode);
     vmap = in.get_mapping();
     unsigned int worst = 0;
@@ -65,7 +77,7 @@ x0::P P::assign()
     ins.push_back(new x0::TwoArg(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     for (auto iptr : this->instr)
     {
-        // temp hack while we do a bad var->mem implementation
+        // temp hack FIXME
         if (typeid(*iptr) == typeid(Ret))
         {
             auto r = static_cast<Ret*>(iptr);
@@ -135,5 +147,65 @@ x0::I* Ret::assign()
 {
     // TODO fix
     return new x0::Ret();
+}
+
+list<string> NoArg::get_vars()
+{
+    return { };
+}
+
+list<string> OneSrc::get_vars()
+{
+    if (typeid(*(this->src)) == typeid(Var))
+    {
+        return { static_cast<Var*>(this->src)->var };
+    }
+    else
+    {
+        return { };
+    }
+}
+
+list<string> OneDst::get_vars()
+{
+    if (typeid(*(this->dst)) == typeid(Var))
+    {
+        return { static_cast<Var*>(this->dst)->var };
+    }
+    else
+    {
+        return { };
+    }
+}
+
+list<string> TwoArg::get_vars()
+{
+    list<string> a;
+    if (typeid(*(this->src)) == typeid(Var))
+    {
+        a.push_back(static_cast<Var*>(this->src)->var);
+    }
+    if (typeid(*(this->dst)) == typeid(Var))
+    {
+        a.push_back(static_cast<Var*>(this->dst)->var);
+    }
+    return a;
+}
+
+list<string> Call::get_vars()
+{
+    return { };
+}
+
+list<string> Ret::get_vars()
+{
+    if (typeid(*(this->arg)) == typeid(Var))
+    {
+        return { static_cast<Var*>(this->arg)->var };
+    }
+    else
+    {
+        return { };
+    }
 }
 

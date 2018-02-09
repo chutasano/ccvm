@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <string>
 #include <vector>
 
@@ -44,6 +45,7 @@ namespace x0s
     struct I
     {
         virtual x0::I* assign() = 0;
+        virtual std::list<std::string> get_vars() = 0;
     };
 
     struct NoArg : I
@@ -51,6 +53,7 @@ namespace x0s
         NoArg(no_arg i) : instr(i) { }
         no_arg instr;
         x0::I* assign();
+        std::list<std::string> get_vars();
     };
 
     struct OneSrc : I
@@ -59,6 +62,7 @@ namespace x0s
         one_src instr;
         Arg* src;
         x0::I* assign();
+        std::list<std::string> get_vars();
     };
 
     struct OneDst : I
@@ -67,6 +71,7 @@ namespace x0s
         one_dst instr;
         Dst* dst;
         x0::I* assign();
+        std::list<std::string> get_vars();
     };
 
     struct TwoArg : I
@@ -76,6 +81,7 @@ namespace x0s
         Arg* src;
         Dst* dst;
         x0::I* assign();
+        std::list<std::string> get_vars();
     };
 
     struct Call : I
@@ -83,6 +89,7 @@ namespace x0s
         Call(std::string l) : label(l) { }
         std::string label;
         x0::I* assign();
+        std::list<std::string> get_vars();
     };
 
     struct Ret : I
@@ -90,6 +97,7 @@ namespace x0s
         Ret(Arg* a) : arg(a) { }
         Arg* arg;
         x0::I* assign();
+        std::list<std::string> get_vars();
     };
 
     // program container for X0
