@@ -32,7 +32,7 @@ namespace x0
         std::string to_string();
     };
 
-    struct Mem : Arg
+    struct Mem : Dst
     {
         Mem(std::string n, int o) : regname(n), offset(o) { }
         std::string regname;

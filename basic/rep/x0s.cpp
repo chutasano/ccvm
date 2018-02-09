@@ -4,14 +4,27 @@
 #include <vector>
 
 #include "asm.h"
+#include "graph.h"
 #include "x0s.h"
 
 using namespace std;
 using namespace x0s;
 
-int total_offset;
+// FIXME global
+map<string, unsigned int> vmap;
 
-int get_offset(string v)
+static const vector<string> regs
+{
+    "r11",
+    "r12",
+    "r13",
+    "r14",
+    "r15"
+};
+
+const assign_mode a_mode = ASG_NAIVE;
+
+static int get_offset(string v)
 {
     static int worst = 8;
     static map<string, int> m;
@@ -32,8 +45,23 @@ int get_offset(string v)
 
 x0::P P::assign()
 {
-    std::vector<x0::I*> ins;
-    total_offset = 8*this->vars.size();
+    Graph::NodeList in;
+    for (string s : vars)
+    {
+        in.add_node(s);
+    }
+    in.assign(regs.size(), a_mode);
+    vmap = in.get_mapping();
+    unsigned int worst = 0;
+    for (auto p : vmap)
+    {
+        if (p.second > worst)
+        {
+            worst = p.second;
+        }
+    }
+    int total_offset = 8*(worst - regs.size() + 1);
+    vector<x0::I*> ins;
     ins.push_back(new x0::TwoArg(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     for (auto iptr : this->instr)
     {
@@ -45,7 +73,6 @@ x0::P P::assign()
             ins.push_back(new x0::TwoArg(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
             ins.push_back(new x0::Ret());
         }
-        else
         {
             ins.push_back(iptr->assign());
         }
@@ -60,7 +87,16 @@ x0::Arg* Reg::assign()
 
 x0::Arg* Var::assign()
 {
-    return new x0::Mem("rsp", get_offset(this->var));
+    string v = this->var;
+    if (vmap[v] < regs.size())
+    {
+        return new x0::Reg(regs.at(vmap[v]));
+    }
+    else
+    {
+        return new x0::Mem("rsp", -8*(vmap[v]-regs.size()));
+    }
+
 }
 
 x0::Arg* Con::assign()

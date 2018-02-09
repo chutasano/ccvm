@@ -99,6 +99,8 @@ namespace x0s
         std::vector<I*> instr;
         std::vector<std::string> vars;
         x0::P assign();
+        private:
+        void interference();
     };
 
 }
