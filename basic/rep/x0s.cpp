@@ -1,3 +1,4 @@
+#include <iterator>
 #include <map>
 #include <string>
 #include <typeinfo>
@@ -10,19 +11,21 @@
 using namespace std;
 using namespace x0s;
 
+#define _DEBUG
+
 // FIXME global
 map<string, unsigned int> vmap;
 
 static const vector<string> regs
 {
-    "r11",
+    "rbx",
     "r12",
     "r13",
     "r14",
     "r15"
 };
 
-const assign_mode a_mode = ASG_NAIVE;
+const assign_mode a_mode = ASG_SMART;
 
 x0::P P::assign()
 {
@@ -54,12 +57,30 @@ x0::P P::assign()
         i++;
     }
     //use lifetime to make edges
-    for (auto it = lifetime.begin(); it!=lifetime.end(); ++it)
+    for (auto it = lifetime.begin(); it != lifetime.end(); ++it)
     {
 #ifdef DEBUG
         cout << it->first << " lives from " << it->second.first << " to " << it->second.second << endl;
 #endif
-
+        int min = it->second.first;
+        int max = it->second.second;
+        list<string> local_interf;
+        for (auto it_search = next(it); it_search != lifetime.end(); ++it_search)
+        {
+            int lmin = it_search->second.first;
+            int lmax = it_search->second.second;
+#ifdef DEBUG
+            cout << "Var: " << min << " to " << max << endl
+                 << "  t: " << lmin << " to " << lmax << endl;
+#endif
+            if ((lmin <= min && lmax >= min) ||
+                (lmin <= max && lmax >= max) ||
+                (lmin >= min && lmax <= max))
+            {
+                local_interf.push_back(it_search->first);
+            }
+        }
+        in.add_edges(it->first, local_interf);
     }
 
     in.assign(regs.size(), a_mode);

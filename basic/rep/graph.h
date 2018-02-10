@@ -3,15 +3,28 @@
 #include <iostream>
 #include <list>
 #include <map>
+#include <queue>
 #include <set>
 #include <string>
 
 enum assign_mode 
 { 
-    ASG_NAIVE, 
-    ASG_NAIVE2, 
-    ASG_SMART, 
-    ASG_RANGE 
+    // only use stack
+    ASG_NAIVE,
+
+    // use registers, but never reuse registers
+    ASG_NAIVE2,
+
+    // reuse registers as much as possible using saturation alg
+    ASG_SMART,
+
+    // SMART but with bias towards using registers for more frequently
+    // used vars
+    ASG_RANGE,
+
+    // Using Graph coloring algorithm (NP Comp, super slow)
+    // with #reg colors, and increment by 1 every time it fails
+    ASG_GCOLOR
 };
 
 
@@ -50,10 +63,36 @@ struct Node
         neighbors.push_back(n);
     }
 
+    // higher = the more we want it to be a register
+    float preference() const
+    {
+        /* Criterias to think about:
+         * 1) highest preference to loop variables
+         * 2) higher preference to ones with constraints
+         * 3) higher preference to low neighbors.size()
+         */
+        if (neighbors.size() != 0)
+        {
+            return 1.0/neighbors.size();
+        }
+        else
+        {
+            return 99999999.0f;
+        }
+    }
+
     std::string name;
     int n; // lower = register
     std::set<unsigned int> saturation;
     std::list<Node*> neighbors;
+};
+
+struct node_strict_less
+{
+    bool operator()(const Node* l, const Node* r)
+    {
+        return l->preference() < r->preference();
+    }
 };
 
 struct NodeList
@@ -88,32 +127,68 @@ struct NodeList
         }
         return varmap;
     }
+    void do_naive(int num_reg)
+    {
+        int i = num_reg;
+        for (auto p : m)
+        {
+            p.second->force(i++);
+        }
+    }
+    void do_naive2(int num_reg)
+    {
+        int i = 0;
+        for (auto p : m)
+        {
+            p.second->force(i++);
+        }
+    }
+    void do_smart(int num_reg)
+    {
+        std::priority_queue<Node*, std::vector<Node*>, node_strict_less > pq;
+        for (auto p : m)
+        {
+            pq.push(p.second);
+        }
+        while(!pq.empty())
+        {
+            // a reasonably efficient way to manage the priority queue
+            // when things keep changing due to adding constraints
+            // only check if the top one is good enough compared to the second best one
+            // this will not account for cases where both top and second top are not
+            Node* top = pq.top();
+            pq.pop();
+            if (pq.top()->preference() <= top->preference())
+            {
+                unsigned int v = top->assign();
+                for (Node* n : top->neighbors)
+                {
+                    n->constrain(v);
+                }
+            }
+            else
+            {
+                pq.push(top);
+            }
+        }
+    }
     void assign(int num_reg, assign_mode mode = ASG_NAIVE)
     {
         switch (mode)
         {
             case ASG_NAIVE:
-                {
-                    int i = 0;
-                    for (auto p : m)
-                    {
-                        p.second->force(i++ + num_reg);
-                    }
-                }
+                do_naive(num_reg);
                 break;
             case ASG_NAIVE2:
-                {
-                    int i = 0;
-                    for (auto p : m)
-                    {
-                        p.second->force(i++);
-                    }
-                }
+                do_naive2(num_reg);
                 break;
             case ASG_SMART:
-                std::cerr << "Error not supported assign_mode: " << mode << std::endl;
+                do_smart(num_reg);
                 break;
             case ASG_RANGE:
+                std::cerr << "Error not supported assign_mode: " << mode << std::endl;
+                break;
+            case ASG_GCOLOR:
                 std::cerr << "Error not supported assign_mode: " << mode << std::endl;
                 break;
             default:
