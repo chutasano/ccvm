@@ -187,7 +187,6 @@ void test_all()
     {
         VAR(x);
         LET(shadowb, x, n23, vx);
-        LET(shadow, x, n10, shadowb);
         tu(shadowb, true);
     }
     const int64_t exponent = 13;

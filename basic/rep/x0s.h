@@ -2,7 +2,6 @@
 
 #include <list>
 #include <string>
-#include <vector>
 
 #include "asm.h"
 #include "x0.h"
@@ -103,8 +102,8 @@ namespace x0s
     // program container for X0
     struct P
     {
-        P(std::vector<I*> i, std::vector<std::string> v) : instr(i), vars(v) { }
-        std::vector<I*> instr;
+        P(std::list<I*> i, std::vector<std::string> v) : instr(i), vars(v) { }
+        std::list<I*> instr;
         std::vector<std::string> vars;
         x0::P assign();
         private:

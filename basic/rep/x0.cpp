@@ -85,26 +85,37 @@ string Ret::to_asm()
 
 void P::fix()
 {
-    for (auto it = begin(this->instr); it != end(this->instr); ++it)
+    // can't ++it in the for loop because erase will advance iterator
+    for (auto it = begin(this->instr); it != end(this->instr);)
     {
         // I think it's okay to do a little hack here; only TwoArg needs fixing
         // so I'd need a bunch of stubs if I were to do it OO
         if (typeid(**it) == typeid(TwoArg))
         {
             auto i = static_cast<TwoArg*>(*it);
-            // we need to fix two args both being memory references
-            if (typeid(*(i->src)) == typeid(Mem) &&
-                typeid(*(i->dst)) == typeid(Mem))
+            if (i->instr == MOVQ &&
+                    typeid(*(i->src)) == typeid(Reg) &&
+                    typeid(*(i->dst)) == typeid(Reg) &&
+                    (static_cast<Reg*>(i->src))->name == (static_cast<Reg*>(i->dst))->name)
             {
-                this->instr.insert(it, new TwoArg(MOVQ, i->src, new Reg("rax")));
-                i->src = new Reg("rax");
-                // iterator can lose validity, which sucks
-                // for now i'll start it from beginning
-                // in the future it'll be better to save a backup of the previous
-                // iterator and start from that
-                it = begin(this->instr);
+                it = this->instr.erase(it);
+            }
+            else
+            {
+                // we need to fix two args both being memory references
+                if (typeid(*(i->src)) == typeid(Mem) &&
+                        typeid(*(i->dst)) == typeid(Mem))
+                {
+                    TwoArg* movq = new TwoArg(MOVQ, i->src, new Reg("rax"));
+                    i->src = new Reg("rax");
+                    it = this->instr.insert(it, movq);
+                }
+                ++it;
             }
         }
-
+        else
+        {
+            ++it;
+        }
     }
 }

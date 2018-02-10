@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <vector>
+#include <list>
 
 #include "asm.h"
 
@@ -94,8 +94,8 @@ namespace x0
     // program container for X0
     struct P
     {
-        P(std::vector<I*> is) : instr(is) { }
-        std::vector<I*> instr;
+        P(std::list<I*> is) : instr(is) { }
+        std::list<I*> instr;
         std::string to_asm();
         void fix();
     };

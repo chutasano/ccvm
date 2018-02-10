@@ -26,7 +26,9 @@ static string to_asm(r0::P p)
     x0::P x0 = xs.assign();
     x0.fix();
     string asms = x0.to_asm();
+#ifdef DEBUG
     cout << asms;
+#endif
     return asms;
 }
 
@@ -39,6 +41,7 @@ string compile(r0::P p)
     int fd = mkstemp(namebuf);
     write(fd, (void*)woof.c_str(), woof.size());
     string name = string(namebuf) + ".s";
+    // FIXME make dynamic
     string runtime = "/home/csano/lang/basic/runtime/lib.o";
     rename(namebuf, name.c_str());
     if ((pid = fork()) == -1)
@@ -71,7 +74,6 @@ string compile(r0::P p)
 
 int compile_run(r0::P p)
 {
-    pid_t pid;
     string pname = "./" + compile(p);
     array<char, 128> buf;
     string result;

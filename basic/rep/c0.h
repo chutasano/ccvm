@@ -1,6 +1,7 @@
 #pragma once
 
 #include <map>
+#include <list>
 #include <string>
 #include <vector>
 
@@ -13,13 +14,13 @@ namespace c0
     struct E
     {
         virtual ~E() { }
-        virtual std::vector<x0s::I*> select(x0s::Dst*) = 0;
+        virtual std::list<x0s::I*> select(x0s::Dst*) = 0;
     };
 
     struct Arg : E
     {
         virtual ~Arg() { }
-        std::vector<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Dst*);
         virtual x0s::Arg* to_arg() = 0;
     };
 
@@ -43,13 +44,13 @@ namespace c0
         S(std::string s, E* ee) : v(s), e(ee) { }
         std::string v;
         E* e;
-        std::vector<x0s::I*> select();
+        std::list<x0s::I*> select();
     };
 
     struct Read : E
     {
         Read() { }
-        std::vector<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Dst*);
     };
 
     struct Binop : E
@@ -58,7 +59,7 @@ namespace c0
         b_ops op;
         Arg* l;
         Arg* r;
-        std::vector<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Dst*);
     };
 
     struct Unop : E
@@ -66,7 +67,7 @@ namespace c0
         Unop(u_ops oper, Arg* value) : op(oper), v(value) { }
         u_ops op;
         Arg* v;
-        std::vector<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Dst*);
     };
 
     struct P

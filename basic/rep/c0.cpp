@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include <vector>
+#include <list>
 
 #include "c0.h"
 
@@ -19,7 +19,7 @@ x0s::Arg* Num::to_arg()
     return new x0s::Con(this->value);
 }
 
-vector<x0s::I*> Arg::select(x0s::Dst* var)
+list<x0s::I*> Arg::select(x0s::Dst* var)
 {
     x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
             this->to_arg(),
@@ -27,7 +27,7 @@ vector<x0s::I*> Arg::select(x0s::Dst* var)
     return { movq };
 }
 
-vector<x0s::I*> Read::select(x0s::Dst* var)
+list<x0s::I*> Read::select(x0s::Dst* var)
 {
     x0s::Call* callq = new x0s::Call("_lang_read");
     x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
@@ -36,7 +36,7 @@ vector<x0s::I*> Read::select(x0s::Dst* var)
     return { callq, movq };
 }
 
-vector<x0s::I*> Binop::select(x0s::Dst* var)
+list<x0s::I*> Binop::select(x0s::Dst* var)
 {
     switch(this->op)
     {
@@ -56,7 +56,7 @@ vector<x0s::I*> Binop::select(x0s::Dst* var)
     }
 }
 
-vector<x0s::I*> Unop::select(x0s::Dst* var)
+list<x0s::I*> Unop::select(x0s::Dst* var)
 {
     switch(this->op)
     {
@@ -74,18 +74,18 @@ vector<x0s::I*> Unop::select(x0s::Dst* var)
     }
 }
 
-vector<x0s::I*> S::select()
+list<x0s::I*> S::select()
 {
     return this->e->select(new x0s::Var(this->v));
 }
 
 x0s::P P::select()
 {
-    std::vector<x0s::I*> instrs;
+    list<x0s::I*> instrs;
     for (auto s : this->stmts)
     {
-        auto is = s.select();
-        instrs.insert(end(instrs), begin(is), end(is));
+        list<x0s::I*> is = s.select();
+        instrs.splice(instrs.end(), is);
     }
     instrs.push_back(new x0s::Ret(this->arg->to_arg()));
     return x0s::P(instrs, this->vars);

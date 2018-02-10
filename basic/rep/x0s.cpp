@@ -1,4 +1,5 @@
 #include <iterator>
+#include <list>
 #include <map>
 #include <string>
 #include <typeinfo>
@@ -94,7 +95,7 @@ x0::P P::assign()
         }
     }
     int total_offset = 8*(worst - regs.size() + 1);
-    vector<x0::I*> ins;
+    list<x0::I*> ins;
     ins.push_back(new x0::TwoArg(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     for (auto iptr : this->instr)
     {
