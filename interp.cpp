@@ -35,10 +35,25 @@ int eval(const E* e, map<string, int> vmap)
         switch (b->op)
         {
             case B_PLUS:
-                result = l+ r;
+                result = l + r;
+                break;
+            case B_EQ:
+                result = (l == r) ? TB_TRUE : TB_FALSE;
+                break;
+            case B_LT:
+                result = (l < r) ? TB_TRUE : TB_FALSE;
+                break;
+            case B_GT:
+                result = (l > r) ? TB_TRUE : TB_FALSE;
+                break;
+            case B_LE:
+                result = (l <= r) ? TB_TRUE : TB_FALSE;
+                break;
+            case B_GE:
+                result = (l >= r) ? TB_TRUE : TB_FALSE;
                 break;
             default:
-                std::cout << "WARN: unknown binary operator: " << b->op << "\n";
+                cout << "WARN: unknown binary operator: " << b->op << "\n";
                 break;
         }
         return result;
@@ -53,8 +68,11 @@ int eval(const E* e, map<string, int> vmap)
             case U_NEG:
                 result = -val;
                 break;
+            case U_NOT:
+                result = (val == TB_TRUE) ? TB_FALSE : TB_TRUE;
+                break;
             default:
-                std::cout << "WARN: unknown unary operator: " << u->op << "\n";
+                cout << "WARN: unknown unary operator: " << u->op << "\n";
                 break;
         }
         return result;
@@ -84,7 +102,7 @@ int eval(const E* e, map<string, int> vmap)
 int interp(const P &p)
 {
     map<string, int> map;
-    return eval(p.e, map) ;
+    return eval(p.e, map);
 }
 
 bool test_interp(const P &p, int expect)

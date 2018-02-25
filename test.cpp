@@ -42,8 +42,15 @@
 
 // operation specifics, might be too much work to maintain if we add more operators
 
-#define PLUS(lexp, rexp) BINOP(bplus ## lexp ## _ ## rexp, B_PLUS, lexp, rexp)
-#define NEG(exp) UNOP(uneg ## exp, U_NEG, exp)
+#define PLUS(lexp, rexp) BINOP(bplus_ ## lexp ## _ ## rexp, B_PLUS, lexp, rexp)
+#define EQ(lexp, rexp) BINOP(beq_ ## lexp ## _ ## rexp, B_EQ, lexp, rexp)
+#define LT(lexp, rexp) BINOP(blt_ ## lexp ## _ ## rexp, B_LT, lexp, rexp)
+#define GT(lexp, rexp) BINOP(bgt_ ## lexp ## _ ## rexp, B_GT, lexp, rexp)
+#define LE(lexp, rexp) BINOP(ble_ ## lexp ## _ ## rexp, B_LE, lexp, rexp)
+#define GE(lexp, rexp) BINOP(bge_ ## lexp ## _ ## rexp, B_GE, lexp, rexp)
+
+#define NEG(exp) UNOP(uneg_ ## exp, U_NEG, exp)
+#define NOT(exp) UNOP(unot_ ## exp, U_NOT, exp)
     
     
 
@@ -189,16 +196,16 @@ void test_all()
     {
         PLUS(n10, n10);
         PLUS(nn1, n23);
-        t(bplusn10_n10, 20);
-        t(bplusnn1_n23, 22);
+        t(bplus_n10_n10, 20);
+        t(bplus_nn1_n23, 22);
     }
 
     ts("Negation operator");
     {
         NEG(n10);
         NEG(nn1);
-        t(unegn10, -10);
-        t(unegnn1, 1);
+        t(uneg_n10, -10);
+        t(uneg_nn1, 1);
     }
 
     ts("Variable lookup");
@@ -206,7 +213,7 @@ void test_all()
         LET(onevar, x, n10, vx);
         t(onevar, 10);
         PLUS(vx, vy);
-        LET(twovaradd2, y, n23, bplusvx_vy);
+        LET(twovaradd2, y, n23, bplus_vx_vy);
         LET(twovaradd, x, n10, twovaradd2);
         t(twovaradd, 33);
     }
@@ -222,7 +229,7 @@ void test_all()
         tu(shadowb, true);
     }
 
-    const int64_t exponent = 13;
+    const int64_t exponent = 10;
     ts("Power");
     {
         // god why doesn't C have int powers
@@ -247,10 +254,86 @@ void test_all()
     ts("Bool");
     {
         t(bt, r0::TB_TRUE);
-        tt(bt, TBOOL);
         t(bf, r0::TB_FALSE);
+        tt(bt, TBOOL);
         tt(bf, TBOOL);
     }
-}
 
+    ts("Not");
+    {
+        NOT(bt);
+        NOT(bf);
+        NOT(unot_bt);
+        NOT(unot_bf);
+        t(unot_bt, r0::TB_FALSE);
+        t(unot_bf, r0::TB_TRUE);
+        t(unot_unot_bt, r0::TB_TRUE);
+        t(unot_unot_bf, r0::TB_FALSE);
+        tt(unot_bt, TBOOL);
+        tt(unot_bf, TBOOL);
+        tt(unot_unot_bt, TBOOL);
+        tt(unot_unot_bf, TBOOL);
+    }
+    ts("Equal");
+    {
+        EQ(n10, nn1);
+        EQ(n10, n10);
+        t(beq_n10_nn1, r0::TB_FALSE);
+        t(beq_n10_n10, r0::TB_TRUE);
+        tt(beq_n10_nn1, TBOOL);
+        tt(beq_n10_n10, TBOOL);
+    }
+
+    ts("LT");
+    {
+        LT(n10, nn1); // 10 < -1, false
+        LT(nn1, n10); // -1 < 10, true
+        LT(n23, n23); // 23 < 23, false
+        t(blt_n10_nn1, r0::TB_FALSE);
+        t(blt_nn1_n10, r0::TB_TRUE);
+        t(blt_n23_n23, r0::TB_FALSE);
+        tt(blt_n10_nn1, TBOOL);
+        tt(blt_nn1_n10, TBOOL);
+        tt(blt_n23_n23, TBOOL);
+    }
+
+    ts("GT");
+    {
+        GT(n10, nn1); // 10 > -1, true
+        GT(nn1, n10); // -1 > 10, false
+        GT(n23, n23); // 23 > 23, false
+        t(bgt_n10_nn1, r0::TB_TRUE);
+        t(bgt_nn1_n10, r0::TB_FALSE);
+        t(bgt_n23_n23, r0::TB_FALSE);
+        tt(bgt_n10_nn1, TBOOL);
+        tt(bgt_nn1_n10, TBOOL);
+        tt(bgt_n23_n23, TBOOL);
+    }
+
+    ts("LE");
+    {
+        LE(n10, nn1); // 10 <= -1, false
+        LE(nn1, n10); // -1 <= 10, true
+        LE(n23, n23); // 23 <= 23, true
+        t(ble_n10_nn1, r0::TB_FALSE);
+        t(ble_nn1_n10, r0::TB_TRUE);
+        t(ble_n23_n23, r0::TB_TRUE);
+        tt(ble_n10_nn1, TBOOL);
+        tt(ble_nn1_n10, TBOOL);
+        tt(ble_n23_n23, TBOOL);
+    }
+
+    ts("GE");
+    {
+        GE(n10, nn1); // 10 >= -1, true
+        GE(nn1, n10); // -1 >= 10, false
+        GE(n23, n23); // 23 >= 23, true
+        t(bge_n10_nn1, r0::TB_TRUE);
+        t(bge_nn1_n10, r0::TB_FALSE);
+        t(bge_n23_n23, r0::TB_TRUE);
+        tt(bge_n10_nn1, TBOOL);
+        tt(bge_nn1_n10, TBOOL);
+        tt(bge_n23_n23, TBOOL);
+    }
+}
 
