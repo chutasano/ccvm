@@ -25,8 +25,8 @@
 // NNUM(1) -> nn1
 #define NNUM(a) UPTR(r0::Num, nn ## a, -a)
 
-#define BTRUE UPTR(r0::Bool, bt, r0::TB_TRUE)
-#define BFALSE UPTR(r0::Bool, bf, r0::TB_FALSE)
+#define BTRUE UPTR(r0::Bool, bt, TB_TRUE)
+#define BFALSE UPTR(r0::Bool, bf, TB_FALSE)
 
 // VAR(x) -> vx
 #define VAR(name) UPTR(r0::Var, v ## name, #name)
@@ -253,8 +253,8 @@ void test_all()
 
     ts("Bool");
     {
-        t(bt, r0::TB_TRUE);
-        t(bf, r0::TB_FALSE);
+        t(bt, TB_TRUE);
+        t(bf, TB_FALSE);
         tt(bt, TBOOL);
         tt(bf, TBOOL);
     }
@@ -265,10 +265,10 @@ void test_all()
         NOT(bf);
         NOT(unot_bt);
         NOT(unot_bf);
-        t(unot_bt, r0::TB_FALSE);
-        t(unot_bf, r0::TB_TRUE);
-        t(unot_unot_bt, r0::TB_TRUE);
-        t(unot_unot_bf, r0::TB_FALSE);
+        t(unot_bt, TB_FALSE);
+        t(unot_bf, TB_TRUE);
+        t(unot_unot_bt, TB_TRUE);
+        t(unot_unot_bf, TB_FALSE);
         tt(unot_bt, TBOOL);
         tt(unot_bf, TBOOL);
         tt(unot_unot_bt, TBOOL);
@@ -278,8 +278,8 @@ void test_all()
     {
         EQ(n10, nn1);
         EQ(n10, n10);
-        t(beq_n10_nn1, r0::TB_FALSE);
-        t(beq_n10_n10, r0::TB_TRUE);
+        t(beq_n10_nn1, TB_FALSE);
+        t(beq_n10_n10, TB_TRUE);
         tt(beq_n10_nn1, TBOOL);
         tt(beq_n10_n10, TBOOL);
     }
@@ -289,9 +289,9 @@ void test_all()
         LT(n10, nn1); // 10 < -1, false
         LT(nn1, n10); // -1 < 10, true
         LT(n23, n23); // 23 < 23, false
-        t(blt_n10_nn1, r0::TB_FALSE);
-        t(blt_nn1_n10, r0::TB_TRUE);
-        t(blt_n23_n23, r0::TB_FALSE);
+        t(blt_n10_nn1, TB_FALSE);
+        t(blt_nn1_n10, TB_TRUE);
+        t(blt_n23_n23, TB_FALSE);
         tt(blt_n10_nn1, TBOOL);
         tt(blt_nn1_n10, TBOOL);
         tt(blt_n23_n23, TBOOL);
@@ -302,9 +302,9 @@ void test_all()
         GT(n10, nn1); // 10 > -1, true
         GT(nn1, n10); // -1 > 10, false
         GT(n23, n23); // 23 > 23, false
-        t(bgt_n10_nn1, r0::TB_TRUE);
-        t(bgt_nn1_n10, r0::TB_FALSE);
-        t(bgt_n23_n23, r0::TB_FALSE);
+        t(bgt_n10_nn1, TB_TRUE);
+        t(bgt_nn1_n10, TB_FALSE);
+        t(bgt_n23_n23, TB_FALSE);
         tt(bgt_n10_nn1, TBOOL);
         tt(bgt_nn1_n10, TBOOL);
         tt(bgt_n23_n23, TBOOL);
@@ -315,9 +315,9 @@ void test_all()
         LE(n10, nn1); // 10 <= -1, false
         LE(nn1, n10); // -1 <= 10, true
         LE(n23, n23); // 23 <= 23, true
-        t(ble_n10_nn1, r0::TB_FALSE);
-        t(ble_nn1_n10, r0::TB_TRUE);
-        t(ble_n23_n23, r0::TB_TRUE);
+        t(ble_n10_nn1, TB_FALSE);
+        t(ble_nn1_n10, TB_TRUE);
+        t(ble_n23_n23, TB_TRUE);
         tt(ble_n10_nn1, TBOOL);
         tt(ble_nn1_n10, TBOOL);
         tt(ble_n23_n23, TBOOL);
@@ -328,9 +328,9 @@ void test_all()
         GE(n10, nn1); // 10 >= -1, true
         GE(nn1, n10); // -1 >= 10, false
         GE(n23, n23); // 23 >= 23, true
-        t(bge_n10_nn1, r0::TB_TRUE);
-        t(bge_nn1_n10, r0::TB_FALSE);
-        t(bge_n23_n23, r0::TB_TRUE);
+        t(bge_n10_nn1, TB_TRUE);
+        t(bge_nn1_n10, TB_FALSE);
+        t(bge_n23_n23, TB_TRUE);
         tt(bge_n10_nn1, TBOOL);
         tt(bge_nn1_n10, TBOOL);
         tt(bge_n23_n23, TBOOL);

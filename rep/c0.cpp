@@ -42,15 +42,8 @@ list<x0s::I*> Binop::select(x0s::Dst* var)
     switch(this->op)
     {
         case B_PLUS:
-            {
-                x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
-                        this->l->to_arg(),
-                        var);
-                x0s::TwoArg* addq = new x0s::TwoArg(ADDQ,
-                        this->r->to_arg(),
-                        var);
-                return { movq, addq };
-            }
+            return { new x0s::TwoArg(MOVQ, this->l->to_arg(), var),
+                     new x0s::TwoArg(ADDQ, this->r->to_arg(), var) };
         default:
             std::cout << "WARN: unknown binary operator: " << this->op << "\n";
             return { };
@@ -62,13 +55,8 @@ list<x0s::I*> Unop::select(x0s::Dst* var)
     switch(this->op)
     {
         case U_NEG:
-            {
-                x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
-                        this->v->to_arg(),
-                        var);
-                x0s::OneDst* negq = new x0s::OneDst(NEGQ, var);
-                return { movq, negq };
-            }
+            return { new x0s::TwoArg(MOVQ, this->v->to_arg(), var),
+                     new x0s::OneDst(NEGQ, var) };
         default:
             std::cout << "WARN: unknown unary operator: " << this->op << "\n";
             return { };

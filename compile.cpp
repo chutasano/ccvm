@@ -105,11 +105,11 @@ bool test_compile(const r0::P &p, int64_t expect)
     {
         if (output == "True\n")
         {
-            return expect == r0::TB_TRUE;
+            return expect == TB_TRUE;
         }
         else if (output == "False\n")
         {
-            return expect == r0::TB_FALSE;
+            return expect == TB_FALSE;
         }
         else
         {

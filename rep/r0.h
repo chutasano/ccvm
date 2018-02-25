@@ -10,11 +10,6 @@
 
 namespace r0
 {
-    enum tbool 
-    {
-        TB_FALSE = 0,
-        TB_TRUE = 1
-    };
 
     struct E
     {
