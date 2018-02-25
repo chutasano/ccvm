@@ -23,12 +23,16 @@ namespace r0
         virtual void uniquify(std::map<std::string, std::string>) = 0;
         virtual type t_check(std::map<std::string, type>) = 0;
         virtual c0::Arg* to_c0() = 0;
+        virtual E* clone() const = 0;
+        virtual void deep_delete() = 0;
     };
 
     struct P
     {
         P(E* ee) : e(ee) { }
+        P(const P &obj);
         E* e;
+        void deep_delete();
         bool is_unique();
         void uniquify();
         type type_check();
@@ -43,6 +47,8 @@ namespace r0
         void uniquify(std::map<std::string, std::string>);
         type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
+        Num* clone() const;
+        void deep_delete() { }
     };
 
     struct Bool : E
@@ -53,6 +59,8 @@ namespace r0
         void uniquify(std::map<std::string, std::string>);
         type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
+        Bool* clone() const;
+        void deep_delete() { }
     };
 
     struct Read : E
@@ -62,6 +70,8 @@ namespace r0
         void uniquify(std::map<std::string, std::string>);
         type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
+        Read* clone() const;
+        void deep_delete() { }
     };
 
     struct Binop : E
@@ -74,6 +84,8 @@ namespace r0
         void uniquify(std::map<std::string, std::string>);
         type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
+        Binop* clone() const;
+        void deep_delete() { this->l->deep_delete(); this->r->deep_delete(); delete this->l; delete this->r; }
     };
 
     struct Unop : E
@@ -85,6 +97,8 @@ namespace r0
         void uniquify(std::map<std::string, std::string>);
         type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
+        Unop* clone() const;
+        void deep_delete() { this->v->deep_delete(); delete this->v; }
     };
 
     struct Var : E
@@ -95,6 +109,8 @@ namespace r0
         void uniquify(std::map<std::string, std::string>);
         type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
+        Var* clone() const;
+        void deep_delete() { }
     };
 
     struct Let : E
@@ -107,6 +123,8 @@ namespace r0
         void uniquify(std::map<std::string, std::string>);
         type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
+        Let* clone() const;
+        void deep_delete() { this->ve->deep_delete(); this->be->deep_delete(); delete this->ve; delete this->be; }
     };
-
 }
+

@@ -46,9 +46,9 @@
 
 using namespace std;
 
-std::function<bool(r0::P, int)> testfunc;
+function<bool(r0::P, int)> testfunc;
 
-static bool both(r0::P p, int expect)
+static bool both(const r0::P &p, int expect)
 {
     bool woof = test_interp(p, expect);
     bool meow = test_compile(p, expect);
@@ -153,6 +153,8 @@ void test_all()
     NUM(10);
     NUM(23);
     NNUM(1);
+    VAR(x);
+    VAR(y);
 
 
     ts("Num");
@@ -179,13 +181,8 @@ void test_all()
 
     ts("Variable lookup");
     {
-        VAR(x);
         LET(onevar, x, n10, vx);
         t(onevar, 10);
-    }
-    {
-        VAR(x);
-        VAR(y);
         PLUS(vx, vy);
         LET(twovaradd2, y, n23, bplusvx_vy);
         LET(twovaradd, x, n10, twovaradd2);
@@ -194,25 +191,15 @@ void test_all()
 
     ts("Shadowing and Uniquify");
     {
-        VAR(x);
         LET(shadowb, x, n23, vx);
         LET(shadow, x, n10, shadowb);
         t(shadow, 23);
         LET(shadowmore, x, nn1, shadow);
         t(shadowmore, 23);
-    }
-    {
-        VAR(x);
-        LET(shadowb, x, n23, vx);
-        LET(shadow, x, n10, shadowb);
-        LET(shadowmore, x, nn1, shadow);
         tu(shadowmore, false);
-    }
-    {
-        VAR(x);
-        LET(shadowb, x, n23, vx);
         tu(shadowb, true);
     }
+
     const int64_t exponent = 13;
     ts("Power");
     {
@@ -225,6 +212,7 @@ void test_all()
         r0::E* twopower = power(exponent);
         t(twopower, ans);
     }
+
     const int chainc = 129;
     ts("Let Chain");
     {

@@ -14,6 +14,53 @@ using namespace r0;
 
 //#define DEBUG
 
+P::P(const P &obj)
+{
+    this->e = obj.e->clone();
+}
+
+void P::deep_delete()
+{
+    this->e->deep_delete();
+    delete this->e;
+}
+
+Num* Num::clone() const
+{
+    return new Num(this->value);
+}
+
+Bool* Bool::clone() const
+{
+    return new Bool(this->value);
+}
+
+Read* Read::clone() const
+{
+    return new Read();
+}
+
+Binop* Binop::clone() const
+{
+    return new Binop(this->op, this->l->clone(), this->r->clone());
+}
+
+Unop* Unop::clone() const
+{
+    return new Unop(this->op, this->v->clone());
+}
+
+Var* Var::clone() const
+{
+    return new Var(this->name);
+}
+
+Let* Let::clone() const
+{
+    return new Let(this->name, this->ve->clone(), this->be->clone());
+}
+
+// TODO fixme
 static map<string, unsigned int> count;
 
 string gensym(string sym)

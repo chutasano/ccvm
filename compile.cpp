@@ -91,8 +91,10 @@ int compile_run(r0::P p)
     return ret;
 }
 
-bool test_compile(r0::P p, int expect)
+bool test_compile(const r0::P &p, int expect)
 {
-    int actual = compile_run(p);
+    r0::P cpy = r0::P(p);
+    int actual = compile_run(cpy);
+    cpy.deep_delete();
     return expect == actual;
 }
