@@ -29,7 +29,7 @@ list<x0s::I*> Arg::select(x0s::Dst* var)
 
 list<x0s::I*> Read::select(x0s::Dst* var)
 {
-    x0s::Call* callq = new x0s::Call("_lang_read");
+    x0s::Call* callq = new x0s::Call("_lang_read_num");
     x0s::TwoArg* movq = new x0s::TwoArg(MOVQ,
             new x0s::Reg("rax"),
             var);
@@ -88,6 +88,6 @@ x0s::P P::select()
         instrs.splice(instrs.end(), is);
     }
     instrs.push_back(new x0s::Ret(this->arg->to_arg()));
-    return x0s::P(instrs, this->vars);
+    return x0s::P(instrs, this->vars, this->t);
 }
 

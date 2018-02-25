@@ -12,7 +12,7 @@
 using namespace std;
 using namespace x0s;
 
-#define _DEBUG
+//#define DEBUG
 
 // FIXME global
 map<string, unsigned int> vmap;
@@ -38,6 +38,7 @@ x0::P P::assign()
     }
     // get lifetime of all vars
     map<string, pair<int, int> > lifetime;
+        
     int i = 1; // let i start at 1 to exploit the default constructor
                // of std::pair to check for initial existance
     for (auto iptr : this->instr)
@@ -60,9 +61,6 @@ x0::P P::assign()
     //use lifetime to make edges
     for (auto it = lifetime.begin(); it != lifetime.end(); ++it)
     {
-#ifdef DEBUG
-        cout << it->first << " lives from " << it->second.first << " to " << it->second.second << endl;
-#endif
         int min = it->second.first;
         int max = it->second.second;
         list<string> local_interf;
@@ -71,14 +69,18 @@ x0::P P::assign()
             int lmin = it_search->second.first;
             int lmax = it_search->second.second;
 #ifdef DEBUG
-            cout << "Var: " << min << " to " << max << endl
-                 << "  t: " << lmin << " to " << lmax << endl;
+            cout << endl
+                 << it->first << ": " << min << " to " << max << endl
+                 << it_search->first << ": " << lmin << " to " << lmax << endl;
 #endif
             if ((lmin <= min && lmax >= min) ||
                 (lmin <= max && lmax >= max) ||
                 (lmin >= min && lmax <= max))
             {
                 local_interf.push_back(it_search->first);
+#ifdef DEBUG
+                cout << "Interferes!\n";
+#endif
             }
         }
         in.add_edges(it->first, local_interf);
@@ -86,6 +88,12 @@ x0::P P::assign()
 
     in.assign(regs.size(), a_mode);
     vmap = in.get_mapping();
+#ifdef DEBUG
+    for (auto p : vmap)
+    {
+        cout << p.first << " : " << p.second << endl;
+    }
+#endif
     unsigned int worst = 0;
     for (auto p : vmap)
     {
@@ -94,9 +102,14 @@ x0::P P::assign()
             worst = p.second;
         }
     }
-    int total_offset = 8*(worst - regs.size() + 1);
     list<x0::I*> ins;
-    ins.push_back(new x0::TwoArg(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+    int total_offset;
+    bool need_stack = worst >= regs.size();
+    if (need_stack)
+    {
+        total_offset = 8*(worst - regs.size() + 1);
+        ins.push_back(new x0::TwoArg(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+    }
     for (auto iptr : this->instr)
     {
         // temp hack FIXME
@@ -104,8 +117,11 @@ x0::P P::assign()
         {
             auto r = static_cast<Ret*>(iptr);
             ins.push_back(new x0::TwoArg(MOVQ, r->arg->assign(), new x0::Reg("rax")));
-            ins.push_back(new x0::TwoArg(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
-            ins.push_back(new x0::Ret());
+            if (need_stack)
+            {
+                ins.push_back(new x0::TwoArg(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+            }
+            ins.push_back(new x0::Ret(this->t));
         }
         else
         {
@@ -168,7 +184,7 @@ x0::I* Call::assign()
 x0::I* Ret::assign()
 {
     // TODO fix
-    return new x0::Ret();
+    return new x0::Ret(BOOL);
 }
 
 list<string> NoArg::get_vars()

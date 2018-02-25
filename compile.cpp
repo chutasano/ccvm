@@ -22,6 +22,8 @@ using namespace std;
 #define STR(a) _STR(a)
 #define _STR(a) #a
 
+//#define DEBUG
+
 static string to_asm(r0::P p)
 {
     p.uniquify();
@@ -54,21 +56,14 @@ string compile(r0::P p)
     }
     else if (pid == 0)
     {
-        char cname[name.size()+1];
-        char cruntime[runtime.size()+1];
-        char cpname[pname.size()+1];
-        strncpy(cname, name.c_str(), name.size());
-        strncpy(cruntime, runtime.c_str(), runtime.size());
-        strncpy(cpname, pname.c_str(), pname.size());
-        char* cmd[] = {
-            "/usr/bin/gcc",
-            cname,
-            cruntime,
-            "-o",
-            cpname,
-            NULL
-        };
-        execv("/usr/bin/gcc", cmd);
+        const char* gccp = "/usr/bin/gcc";
+        execl(gccp,
+              gccp,
+              name.c_str(),
+              runtime.c_str(),
+              "-o",
+              pname.c_str(),
+              (char*)NULL);
     }
     // TODO robust gcc error handling
     wait(NULL);
@@ -99,5 +94,6 @@ int compile_run(r0::P p)
 bool test_compile(r0::P p, int expect)
 {
     int actual = compile_run(p);
+    cout << "Actual: " << actual << endl;
     return expect == actual;
 }

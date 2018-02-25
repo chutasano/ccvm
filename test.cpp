@@ -52,6 +52,14 @@ static bool both(r0::P p, int expect)
 {
     bool woof = test_interp(p, expect);
     bool meow = test_compile(p, expect);
+    if (!woof)
+    {
+        cerr << "Interpreter failed\n";
+    }
+    if (!meow)
+    {
+        cerr << "Compiler failed\n";
+    }
     return woof && meow;
 }
 
@@ -120,8 +128,8 @@ void test_all()
 {
     // TODO switch to test both once compiler is implemented
     //testfunc = test_interp;
-    //testfunc = test_compile;
-    testfunc = both;
+    testfunc = test_compile;
+    //testfunc = both;
 
     cout << "Start Tests\n";
 

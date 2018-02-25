@@ -102,9 +102,10 @@ namespace x0s
     // program container for X0
     struct P
     {
-        P(std::list<I*> i, std::vector<std::string> v) : instr(i), vars(v) { }
+        P(std::list<I*> i, std::vector<std::string> v, type ty) : instr(i), vars(v), t(ty) { }
         std::list<I*> instr;
         std::vector<std::string> vars;
+        type t;
         x0::P assign();
         private:
         void interference();

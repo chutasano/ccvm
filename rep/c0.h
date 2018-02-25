@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "operators.h"
+#include "type.h"
 #include "x0s.h"
 
 namespace c0
@@ -72,11 +73,12 @@ namespace c0
 
     struct P
     {
-        P(std::vector<std::string> v, std::vector<S> s, Arg* a) : vars(v), stmts(s), arg(a) { }
-        x0s::P select();
+        P(std::vector<std::string> v, std::vector<S> s, Arg* a, type ty) : vars(v), stmts(s), arg(a), t(ty) { }
         std::vector<std::string> vars;
         std::vector<S> stmts;
         Arg* arg; //ret
+        type t;
+        x0s::P select();
     };
 }
 

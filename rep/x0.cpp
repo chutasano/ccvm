@@ -76,11 +76,25 @@ string Ret::to_asm()
 {
     // prints out the final value because simply returning
     // won't give us 64 bits (Linux gives 8 bits)
-    // this should be processed by the calee of the program
+    // this should be processed by the callee of the program
     // in automated tests
-    return "MOVQ\t%rax, %rdi\n"
-       "    CALLQ\t_lang_print\n"
-       "    RETQ";
+    stringstream ss;
+    ss << "MOVQ\t%rax, %rdi\n";
+    switch (this->t)
+    {
+        case NUM:
+            ss << "    CALLQ\t_lang_print_num\n";
+            break;
+        case BOOL:
+            ss << "    CALLQ\t_lang_print_bool\n";
+            break;
+        default:
+            cerr << "WTF\n"; //sanity check
+            exit(1);
+            break;
+    }
+    ss << "    RETQ";
+    return ss.str();
 }
 
 void P::fix()

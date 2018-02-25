@@ -1,11 +1,18 @@
 #pragma once
 
+#include <bitset>
 #include <iostream>
 #include <list>
 #include <map>
 #include <queue>
 #include <set>
 #include <string>
+
+#ifdef __GNUC__
+#define ffsll(x) __builtin_ffsll(x)
+#else
+#error No ffsll implementation available. Use gnu compiler or implement it
+#endif
 
 enum assign_mode 
 { 
@@ -31,18 +38,55 @@ enum assign_mode
 namespace Graph
 {
 
+// data structure to hold constraints of an unsigned int
+struct Saturation
+{
+    std::vector<std::bitset<64> > sat;
+    
+    void insert(unsigned int val)
+    {
+        while (sat.size() <= val/64)
+        {
+            sat.push_back(std::bitset<64>());
+            sat.back().set();
+        }
+        sat.at(val/64)[val%64] = 0;
+    }
+
+    unsigned int best()
+    {
+        unsigned int i;
+        for (i = 0; i < sat.size(); i++)
+        {
+            int ffs = ffsll(sat.at(i).to_ullong());
+            if (ffs != 0)
+            {
+                return i*64 + ffs-1;
+            }
+            else
+            {
+                continue;
+            }
+        }
+        return i*64;
+    }
+};
+
 struct Node
 {
     Node(std::string s) : name(s), n(-1) { }
     void constrain(unsigned int constraint)
     {
+#ifdef DEBUG
+        std::cout << name << " constraint: " << constraint << std::endl;
+#endif
         this->saturation.insert(constraint);
     }
     unsigned int assign()
     {
-        auto it = this->saturation.begin();
-        this->n = *it;
-        return *it;
+        unsigned int best = saturation.best();
+        this->n = best;
+        return best;
     }
     // NOTE only use for naive methods
     void force(unsigned int v)
@@ -83,7 +127,7 @@ struct Node
 
     std::string name;
     int n; // lower = register
-    std::set<unsigned int> saturation;
+    Saturation saturation;
     std::list<Node*> neighbors;
 };
 

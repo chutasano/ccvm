@@ -6,15 +6,22 @@
 
 #include "c0.h"
 #include "operators.h"
+#include "type.h"
 
 namespace r0
 {
+    enum bool_val 
+    {
+        BV_FALSE = 0,
+        BV_TRUE = 1
+    };
 
     struct E
     {
         virtual ~E() { }
         virtual std::vector<E*> get_childs() = 0;
         virtual void uniquify(std::map<std::string, std::string>) = 0;
+        virtual type t_check(std::map<std::string, type>) = 0;
         virtual c0::Arg* to_c0() = 0;
     };
 
@@ -24,6 +31,7 @@ namespace r0
         E* e;
         bool is_unique();
         void uniquify();
+        type type_check();
         c0::P flatten();
     };
 
@@ -33,6 +41,17 @@ namespace r0
         int64_t value;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::map<std::string, std::string>);
+        type t_check(std::map<std::string, type>);
+        c0::Arg* to_c0();
+    };
+
+    struct Bool : E
+    {
+        Bool(bool_val v) { value = v; }
+        bool_val value;
+        std::vector<E*> get_childs() { return {}; }
+        void uniquify(std::map<std::string, std::string>);
+        type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
     };
 
@@ -41,6 +60,7 @@ namespace r0
         Read() { }
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::map<std::string, std::string>);
+        type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
     };
 
@@ -52,6 +72,7 @@ namespace r0
         E* r;
         std::vector<E*> get_childs() { return {l, r}; }
         void uniquify(std::map<std::string, std::string>);
+        type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
     };
 
@@ -62,6 +83,7 @@ namespace r0
         E* v;
         std::vector<E*> get_childs() { return {v}; }
         void uniquify(std::map<std::string, std::string>);
+        type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
     };
 
@@ -71,6 +93,7 @@ namespace r0
         std::string name;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::map<std::string, std::string>);
+        type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
     };
 
@@ -82,6 +105,7 @@ namespace r0
         E* be;
         std::vector<E*> get_childs() { return {ve, be}; }
         void uniquify(std::map<std::string, std::string>);
+        type t_check(std::map<std::string, type>);
         c0::Arg* to_c0();
     };
 

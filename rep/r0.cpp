@@ -67,6 +67,11 @@ void Num::uniquify(map<string, string> m)
     return;
 }
 
+void Bool::uniquify(map<string, string> m)
+{
+    return;
+}
+
 void Read::uniquify(map<string, string> m)
 {
     return;
@@ -110,19 +115,33 @@ void Let::uniquify(map<string, string> m)
     this->be->uniquify(m);
 }
 
+// TODO FIXME TODO TODO TODO
 vector<string> vars;
 vector<c0::S> stmts;
 
 c0::P P::flatten()
 {
+    vars.clear();
+    stmts.clear();
     c0::Arg* a = this->e->to_c0();
-    return c0::P(vars, stmts, a);
+    type t = this->type_check();
+    if (t == ERROR)
+    {
+        cerr << "Type check failed";
+        exit(1);
+    }
+    return c0::P(vars, stmts, a, t);
 }
 
 
 c0::Arg* Num::to_c0()
 {
      return new c0::Num(this->value);
+}
+
+c0::Arg* Bool::to_c0()
+{
+     return new c0::Num(static_cast<int>(this->value));
 }
 
 c0::Arg* Read::to_c0()
@@ -163,4 +182,118 @@ c0::Arg* Let::to_c0()
     return this->be->to_c0();
 }
 
+type P::type_check()
+{
+    map<string, type> vars;
+    return this->e->t_check(vars);
+}
+
+type Num::t_check(map<string, type> vmap)
+{
+    return NUM;
+}
+
+type Bool::t_check(map<string, type> vmap)
+{
+    return BOOL;
+}
+
+type Read::t_check(map<string, type> vmap)
+{
+    return NUM;
+}
+
+type Binop::t_check(map<string, type> vmap)
+{
+    type lt = this->l->t_check(vmap);
+    type rt = this->r->t_check(vmap);
+    if (lt == ERROR || rt == ERROR)
+    {
+        cerr << "Binop: args have unresolvable types\n";
+        return ERROR;
+    }
+    if (this->op == B_PLUS) // num,num -> num
+    {
+        if (lt == NUM && rt == NUM)
+        {
+            return NUM;
+        }
+        else
+        {
+            cerr << "Expected num,num got " << lt << ", " << rt << endl;
+            return ERROR;
+        }
+    }
+    else if ((this->op == B_EQ) || // num, num -> bool
+             (this->op == B_LT) ||
+             (this->op == B_GT) ||
+             (this->op == B_LE) ||
+             (this->op == B_GE))
+    {
+        if (lt == NUM && rt == NUM)
+        {
+            return BOOL;
+        }
+        else
+        {
+            cerr << "Expected num,num got " << lt << ", " << rt << endl;
+            return ERROR;
+        }
+    }
+    else
+    {
+        cerr << "Unsupported operator: " << this->op << endl;
+        return ERROR;
+    }
+}
+
+type Unop::t_check(map<string, type> vmap)
+{
+    type vt = this->v->t_check(vmap);
+    if (vt == ERROR)
+    {
+        cerr << "Unop: child has unresolved type\n";
+        return ERROR;
+    }
+    if (this->op == U_NEG) // num -> num
+    {
+        if (vt == NUM)
+        {
+            return NUM;
+        }
+        else
+        {
+            cerr << "U_NEG expects a NUM\n";
+            return ERROR;
+        }
+    }
+    else if (this->op == U_NOT) // bool -> bool
+    {
+        if (vt == BOOL)
+        {
+            return BOOL;
+        }
+        else
+        {
+            cerr << "U_NOT expects a BOOL\n";
+            return ERROR;
+        }
+    }
+    else
+    {
+        cerr << "Bad unary op " << this->op << endl;
+        return ERROR;
+    }
+}
+
+type Var::t_check(map<string, type> vmap)
+{
+    return vmap.at(this->name);
+}
+
+type Let::t_check(map<string, type> vmap)
+{
+    vmap[this->name] = this->ve->t_check(vmap);
+    return this->be->t_check(vmap);
+}
 

@@ -4,6 +4,7 @@
 #include <list>
 
 #include "asm.h"
+#include "type.h"
 
 namespace x0
 {
@@ -87,7 +88,8 @@ namespace x0
 
     struct Ret : I
     {
-        Ret() {  }
+        Ret(type ty) : t(ty) {  }
+        type t;
         std::string to_asm();
     };
 
