@@ -24,7 +24,7 @@ using namespace std;
 
 //#define DEBUG
 
-static string to_asm(r0::P p)
+static string to_asm(r0::P &p)
 {
     p.uniquify();
     c0::P c = p.flatten();
@@ -38,7 +38,7 @@ static string to_asm(r0::P p)
     return asms;
 }
 
-string compile(r0::P p)
+string compile(r0::P &p)
 {
     string woof = to_asm(p);
     string pname = "woof";
@@ -71,7 +71,7 @@ string compile(r0::P p)
     return pname;
 }
 
-int compile_run(r0::P p)
+int compile_run(r0::P &p)
 {
     string pname = "./" + compile(p);
     array<char, 128> buf;
