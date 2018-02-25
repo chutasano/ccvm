@@ -16,6 +16,10 @@ int eval(const E* e, map<string, int> vmap)
     {
         return static_cast<const Num*>(e)->value;
     }
+    else if (typeid(*e) == typeid(Bool))
+    {
+        return static_cast<const Bool*>(e)->value;
+    }
     else if (typeid(*e) == typeid(Read))
     {
         int val;

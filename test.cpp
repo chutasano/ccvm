@@ -25,6 +25,9 @@
 // NNUM(1) -> nn1
 #define NNUM(a) UPTR(r0::Num, nn ## a, -a)
 
+#define BTRUE UPTR(r0::Bool, bt, r0::TB_TRUE)
+#define BFALSE UPTR(r0::Bool, bf, r0::TB_FALSE)
+
 // VAR(x) -> vx
 #define VAR(name) UPTR(r0::Var, v ## name, #name)
 
@@ -91,12 +94,12 @@ static r0::E* letchain(int chaincount)
     }
 }
 
-void ts(string name)
+static void ts(string name)
 {
     cout << endl << "Test suite: " << name << endl;
 }
 
-void t(r0::E* e, int expect)
+static void t(r0::E* e, int expect)
 {
     r0::P p(e);
     if (testfunc(p, expect))
@@ -110,7 +113,7 @@ void t(r0::E* e, int expect)
 }
 
 // test for uniqueness and uniquify
-void tu(r0::E* e, bool unique)
+static void tu(r0::E* e, bool unique)
 {
     r0::P p(e);
     if (p.is_unique() && unique)
@@ -140,6 +143,22 @@ void tu(r0::E* e, bool unique)
     }
 }
 
+// test for typechecker
+static void tt(r0::E* e, type expect)
+{
+    r0::P p(e);
+    type ty = p.type_check();
+    if (ty == expect)
+    {
+        cout << "  Test passed: type check\n";
+    }
+    else
+    {
+        cout << "  Test failed: type check, expected "
+             << expect << " got " << ty << endl;
+    }
+}
+
 void test_all()
 {
     // TODO switch to test both once compiler is implemented
@@ -150,17 +169,20 @@ void test_all()
     cout << "Start Tests\n";
 
     // Useful expressions are pre-defined here for future use
-    NUM(10);
-    NUM(23);
-    NNUM(1);
-    VAR(x);
-    VAR(y);
-
+    NUM(10); // n10
+    NUM(23); // n23
+    NNUM(1); // nn1
+    VAR(x);  // vx
+    VAR(y);  // vy
+    BTRUE;   // bt
+    BFALSE;  // bf
 
     ts("Num");
     {
         t(n10, 10);
+        tt(n10, TNUM);
         t(nn1, -1);
+        tt(nn1, TNUM);
     }
 
     ts("Addition operator");
@@ -211,6 +233,7 @@ void test_all()
         }
         r0::E* twopower = power(exponent);
         t(twopower, ans);
+        tt(twopower, TNUM);
     }
 
     const int chainc = 129;
@@ -218,6 +241,15 @@ void test_all()
     {
         r0::E* lets = letchain(chainc);
         t(lets, 0);
+        tt(lets, TNUM);
+    }
+
+    ts("Bool");
+    {
+        t(bt, r0::TB_TRUE);
+        tt(bt, TBOOL);
+        t(bf, r0::TB_FALSE);
+        tt(bf, TBOOL);
     }
 }
 

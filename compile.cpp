@@ -71,7 +71,7 @@ string compile(r0::P &p)
     return pname;
 }
 
-int compile_run(r0::P &p)
+string compile_run(r0::P &p)
 {
     string pname = "./" + compile(p);
     array<char, 128> buf;
@@ -87,14 +87,38 @@ int compile_run(r0::P &p)
         if (fgets(buf.data(), 128, pipe.get()) != nullptr)
             result += buf.data();
     }
-    int64_t ret = stol(result, nullptr);
-    return ret;
+    return result; 
 }
 
-bool test_compile(const r0::P &p, int expect)
+bool test_compile(const r0::P &p, int64_t expect)
 {
     r0::P cpy = r0::P(p);
-    int actual = compile_run(cpy);
+    string output = compile_run(cpy);
+    type t = cpy.type_check();
     cpy.deep_delete();
-    return expect == actual;
+    if (t == TNUM)
+    {
+        int64_t actual = stoll(output, nullptr);
+        return expect == actual;
+    }
+    else if (t == TBOOL)
+    {
+        if (output == "True\n")
+        {
+            return expect == r0::TB_TRUE;
+        }
+        else if (output == "False\n")
+        {
+            return expect == r0::TB_FALSE;
+        }
+        else
+        {
+            return false;
+        }
+    }
+    else
+    {
+        return false;
+    }
 }
+

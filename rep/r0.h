@@ -10,10 +10,10 @@
 
 namespace r0
 {
-    enum bool_val 
+    enum tbool 
     {
-        BV_FALSE = 0,
-        BV_TRUE = 1
+        TB_FALSE = 0,
+        TB_TRUE = 1
     };
 
     struct E
@@ -53,8 +53,8 @@ namespace r0
 
     struct Bool : E
     {
-        Bool(bool_val v) { value = v; }
-        bool_val value;
+        Bool(tbool v) { value = v; }
+        tbool value;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
         type t_check(std::unordered_map<std::string , type>) const;
