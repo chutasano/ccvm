@@ -94,6 +94,5 @@ int compile_run(r0::P p)
 bool test_compile(r0::P p, int expect)
 {
     int actual = compile_run(p);
-    cout << "Actual: " << actual << endl;
     return expect == actual;
 }

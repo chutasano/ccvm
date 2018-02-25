@@ -13,6 +13,7 @@ using namespace std;
 using namespace x0s;
 
 //#define DEBUG
+//#define DEBUG_VERB
 
 // FIXME global
 map<string, unsigned int> vmap;
@@ -68,7 +69,7 @@ x0::P P::assign()
         {
             int lmin = it_search->second.first;
             int lmax = it_search->second.second;
-#ifdef DEBUG
+#ifdef DEBUG_VERB
             cout << endl
                  << it->first << ": " << min << " to " << max << endl
                  << it_search->first << ": " << lmin << " to " << lmax << endl;
@@ -78,7 +79,7 @@ x0::P P::assign()
                 (lmin >= min && lmax <= max))
             {
                 local_interf.push_back(it_search->first);
-#ifdef DEBUG
+#ifdef DEBUG_VERB
                 cout << "Interferes!\n";
 #endif
             }

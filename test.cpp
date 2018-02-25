@@ -75,6 +75,22 @@ static r0::E* power(int exp)
     }
 }
 
+// chain of lets to stress test register allocation
+static r0::E* letchain(int chaincount)
+{
+    if (chaincount == 0)
+    {
+        return new r0::Num(0);
+    }
+    else
+    {
+        return new r0::Let("chaincount" + to_string(chaincount), 
+                           new r0::Num(0),
+                           new r0::Binop(B_PLUS, new r0::Var("chaincount" + to_string(chaincount)),
+                               letchain(chaincount-1)));
+    }
+}
+
 void ts(string name)
 {
     cout << endl << "Test suite: " << name << endl;
@@ -128,8 +144,8 @@ void test_all()
 {
     // TODO switch to test both once compiler is implemented
     //testfunc = test_interp;
-    testfunc = test_compile;
-    //testfunc = both;
+    //testfunc = test_compile;
+    testfunc = both;
 
     cout << "Start Tests\n";
 
@@ -208,6 +224,12 @@ void test_all()
         }
         r0::E* twopower = power(exponent);
         t(twopower, ans);
+    }
+    const int chainc = 129;
+    ts("Let Chain");
+    {
+        r0::E* lets = letchain(chainc);
+        t(lets, 0);
     }
 }
 
