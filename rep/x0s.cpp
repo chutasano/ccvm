@@ -104,6 +104,7 @@ x0::P P::assign()
         }
     }
     list<x0::I*> ins;
+    ins.push_back(new x0::Label("main"));
     int total_offset;
     bool need_stack = worst >= regs.size();
     if (need_stack)
@@ -148,7 +149,6 @@ x0::Arg* Var::assign()
     {
         return new x0::Mem("rsp", -8*(vmap[v]-regs.size()));
     }
-
 }
 
 x0::Arg* Con::assign()

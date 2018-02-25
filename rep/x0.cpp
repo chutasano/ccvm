@@ -14,8 +14,7 @@ using namespace x0;
 string P::to_asm()
 {
     stringstream ss;
-    ss  << ".globl main" << endl
-        << "main:" << endl;
+    ss  << ".globl main" << endl;
     for (auto i : instr)
     {
         ss << "    " << i->to_asm() << endl;
@@ -45,6 +44,11 @@ string Mem::to_string()
     {
         return std::to_string(this->offset) + "(%" + regname + ")";
     }
+}
+
+string Label::to_asm()
+{
+    return name + ":";
 }
 
 string NoArg::to_asm()

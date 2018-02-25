@@ -26,6 +26,14 @@ namespace x0
         std::string to_string();
     };
 
+    // 8 bit reg
+    struct Reg8 : Dst
+    {
+        Reg8(std::string n) : name(n) { }
+        std::string name;
+        std::string to_string();
+    };
+
     struct Con : Arg
     {
         Con(int64_t c) : val(c) { }
@@ -45,6 +53,13 @@ namespace x0
     struct I
     {
         virtual std::string to_asm() = 0;
+    };
+
+    struct Label : I
+    {
+        Label(std::string n) : name(n) { }
+        std::string name;
+        std::string to_asm();
     };
 
     struct NoArg : I

@@ -73,7 +73,7 @@ x0s::P P::select()
     list<x0s::I*> instrs;
     for (auto s : this->stmts)
     {
-        list<x0s::I*> is = s.select();
+        list<x0s::I*> is = s->select();
         instrs.splice(instrs.end(), is);
     }
     instrs.push_back(new x0s::Ret(this->arg->to_arg()));

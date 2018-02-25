@@ -17,7 +17,10 @@
 #define X0_TWO_ARG \
     ES(ADDQ)       \
     ES(SUBQ)       \
-    ES(MOVQ)
+    ES(MOVQ)       \
+    ES(XORQ)       \
+    ES(CMPQ)       \
+    ES(MOVZBQ)
 
 
 enum no_arg 

@@ -37,12 +37,27 @@ namespace c0
         x0s::Arg* to_arg();
     };
 
+    // abstract statement either contains an if or a statement
+    struct AS
+    {
+        virtual std::list<x0s::I*> select() = 0;
+    };
+
     //stmt
-    struct S
+    struct S : AS
     {
         S(std::string s, E* ee) : v(s), e(ee) { }
         std::string v;
         E* e;
+        std::list<x0s::I*> select();
+    };
+
+    struct If : AS
+    {
+        If(E* ee, S thenstmt, S elsestmt) : conde(ee), thens(thenstmt), elses(elsestmt) { }
+        E* conde;
+        S thens;
+        S elses;
         std::list<x0s::I*> select();
     };
 
@@ -71,9 +86,9 @@ namespace c0
 
     struct P
     {
-        P(std::vector<std::string> v, std::vector<S> s, Arg* a, type ty) : vars(v), stmts(s), arg(a), t(ty) { }
+        P(std::vector<std::string> v, std::vector<AS*> s, Arg* a, type ty) : vars(v), stmts(s), arg(a), t(ty) { }
         std::vector<std::string> vars;
-        std::vector<S> stmts;
+        std::vector<AS*> stmts;
         Arg* arg; //ret
         type t;
         x0s::P select();

@@ -22,7 +22,7 @@ using namespace std;
 #define STR(a) _STR(a)
 #define _STR(a) #a
 
-//#define DEBUG
+#define DEBUG
 
 static string to_asm(r0::P &p)
 {
