@@ -1,8 +1,8 @@
 #include <iterator>
 #include <list>
-#include <map>
 #include <string>
 #include <typeinfo>
+#include <unordered_map>
 #include <vector>
 
 #include "asm.h"
@@ -16,7 +16,7 @@ using namespace x0s;
 //#define DEBUG_VERB
 
 // FIXME global
-map<string, unsigned int> vmap;
+unordered_map<string, unsigned int> vmap;
 
 static const vector<string> regs
 {
@@ -38,7 +38,7 @@ x0::P P::assign()
         in.add_node(s);
     }
     // get lifetime of all vars
-    map<string, pair<int, int> > lifetime;
+    unordered_map<string, pair<int, int> > lifetime;
         
     int i = 1; // let i start at 1 to exploit the default constructor
                // of std::pair to check for initial existance

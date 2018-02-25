@@ -3,10 +3,10 @@
 #include <bitset>
 #include <iostream>
 #include <list>
-#include <map>
 #include <queue>
 #include <set>
 #include <string>
+#include <unordered_map>
 
 #ifdef __GNUC__
 #define ffsll(x) __builtin_ffsll(x)
@@ -162,9 +162,9 @@ struct NodeList
             m.at(d)->add_neighbor(m.at(src));
         }
     }
-    std::map<std::string, unsigned int> get_mapping()
+    std::unordered_map<std::string, unsigned int> get_mapping()
     {
-        std::map<std::string, unsigned int> varmap;
+        std::unordered_map<std::string, unsigned int> varmap;
         for (auto p : m)
         {
             varmap.insert(p.second->get_mapping());
@@ -241,7 +241,7 @@ struct NodeList
         }
     }
 
-    std::map<std::string, Node*> m;
+    std::unordered_map<std::string, Node*> m;
 
 };
 

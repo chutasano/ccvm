@@ -1,13 +1,14 @@
 #include <iostream>
-#include <string>
 #include <list>
+#include <string>
+#include <unordered_map>
 
 #include "c0.h"
 
 using namespace std;
 using namespace c0;
 
-static map<string, unsigned int> count;
+static unordered_map<string, unsigned int> count;
 
 x0s::Arg* Var::to_arg()
 {
