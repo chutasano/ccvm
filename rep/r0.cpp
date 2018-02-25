@@ -26,11 +26,14 @@ using namespace r0;
 //'[i]f
 
 
-// TODO fixme
-static unordered_map<string, unsigned int> count;
-
-string gensym(string sym)
+string gensym(string sym, bool reset = false)
 {
+    static unordered_map<string, unsigned int> count;
+    if (reset && sym == "")
+    {
+        count.clear();
+        return "";
+    }
     unsigned int id = 0;
     auto it = count.find(sym);
     if (it != count.end())
@@ -57,14 +60,14 @@ void P::deep_delete()
 
 void P::uniquify()
 {
-    count.clear();
+    gensym("", true); // resets gensym count
     unordered_map<string, string> varmap;
     this->e->uniquify(varmap);
 }
 
 bool P::is_unique() const
 {
-    vector<string> varnames; // FIXME is vector overkill for finding duplicates?
+    list<string> varnames;
     queue<E*> nodes;
     nodes.push(e);
     while (!nodes.empty())
@@ -91,7 +94,7 @@ c0::P P::flatten() const
     vector<c0::S> stmts;
     c0::Arg* a = this->e->to_c0(vars, stmts);
     type t = this->type_check();
-    if (t == ERROR)
+    if (t == TERROR)
     {
         cerr << "Type check failed";
         exit(1);
@@ -122,7 +125,7 @@ c0::Arg* Num::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 
 type Num::t_check(unordered_map<string, type> vmap) const
 {
-    return NUM;
+    return TNUM;
 }
 
 Bool* Bool::clone() const
@@ -142,7 +145,7 @@ c0::Arg* Bool::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 
 type Bool::t_check(unordered_map<string, type> vmap) const
 {
-    return BOOL;
+    return TBOOL;
 }
 
 Read* Read::clone() const
@@ -165,7 +168,7 @@ c0::Arg* Read::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 
 type Read::t_check(unordered_map<string, type> vmap) const
 {
-    return NUM;
+    return TNUM;
 }
 
 
@@ -194,21 +197,21 @@ type Binop::t_check(unordered_map<string, type> vmap) const
 {
     type lt = this->l->t_check(vmap);
     type rt = this->r->t_check(vmap);
-    if (lt == ERROR || rt == ERROR)
+    if (lt == TERROR || rt == TERROR)
     {
         cerr << "Binop: args have unresolvable types\n";
-        return ERROR;
+        return TERROR;
     }
     if (this->op == B_PLUS) // num,num -> num
     {
-        if (lt == NUM && rt == NUM)
+        if (lt == TNUM && rt == TNUM)
         {
-            return NUM;
+            return TNUM;
         }
         else
         {
             cerr << "Expected num,num got " << lt << ", " << rt << endl;
-            return ERROR;
+            return TERROR;
         }
     }
     else if ((this->op == B_EQ) || // num, num -> bool
@@ -217,20 +220,20 @@ type Binop::t_check(unordered_map<string, type> vmap) const
              (this->op == B_LE) ||
              (this->op == B_GE))
     {
-        if (lt == NUM && rt == NUM)
+        if (lt == TNUM && rt == TNUM)
         {
-            return BOOL;
+            return TBOOL;
         }
         else
         {
             cerr << "Expected num,num got " << lt << ", " << rt << endl;
-            return ERROR;
+            return TERROR;
         }
     }
     else
     {
         cerr << "Unsupported operator: " << this->op << endl;
-        return ERROR;
+        return TERROR;
     }
 }
 
@@ -255,39 +258,39 @@ c0::Arg* Unop::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 type Unop::t_check(unordered_map<string, type> vmap) const
 {
     type vt = this->v->t_check(vmap);
-    if (vt == ERROR)
+    if (vt == TERROR)
     {
         cerr << "Unop: child has unresolved type\n";
-        return ERROR;
+        return TERROR;
     }
     if (this->op == U_NEG) // num -> num
     {
-        if (vt == NUM)
+        if (vt == TNUM)
         {
-            return NUM;
+            return TNUM;
         }
         else
         {
-            cerr << "U_NEG expects a NUM\n";
-            return ERROR;
+            cerr << "U_NEG expects a TNUM\n";
+            return TERROR;
         }
     }
     else if (this->op == U_NOT) // bool -> bool
     {
-        if (vt == BOOL)
+        if (vt == TBOOL)
         {
-            return BOOL;
+            return TBOOL;
         }
         else
         {
-            cerr << "U_NOT expects a BOOL\n";
-            return ERROR;
+            cerr << "U_NOT expects a TBOOL\n";
+            return TERROR;
         }
     }
     else
     {
         cerr << "Bad unary op " << this->op << endl;
-        return ERROR;
+        return TERROR;
     }
 }
 
@@ -374,21 +377,21 @@ c0::Arg* If::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 
 type If::t_check(unordered_map<string, type> vmap) const
 {
-    if (conde->t_check(vmap) != BOOL)
+    if (conde->t_check(vmap) != TBOOL)
     {
         cerr << "If: cond expression does not have type bool\n";
-        return ERROR;
+        return TERROR;
     }
     type thent = thene->t_check(vmap);
     type elset = elsee->t_check(vmap);
     if (thent == elset)
     {
-        return thent; // if both are ERROR, we'll catch it from the ret anyway
+        return thent; // if both are TERROR, we'll catch it from the ret anyway
     }
     else
     {
         cerr << "If: then and else expression types not matching\n";
-        return ERROR;
+        return TERROR;
     }
 }
 

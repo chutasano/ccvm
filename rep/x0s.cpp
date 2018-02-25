@@ -185,7 +185,7 @@ x0::I* Call::assign()
 x0::I* Ret::assign()
 {
     // TODO fix
-    return new x0::Ret(BOOL);
+    return new x0::Ret(TBOOL);
 }
 
 list<string> NoArg::get_vars()

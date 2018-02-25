@@ -2,8 +2,8 @@
 
 enum type
 {
-    NUM,
-    BOOL,
-    ERROR
+    TNUM,
+    TBOOL,
+    TERROR
 };
 

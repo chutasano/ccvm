@@ -10,7 +10,6 @@
 
 namespace c0
 {
-
     struct E
     {
         virtual ~E() { }

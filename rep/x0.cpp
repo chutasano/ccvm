@@ -82,10 +82,10 @@ string Ret::to_asm()
     ss << "MOVQ\t%rax, %rdi\n";
     switch (this->t)
     {
-        case NUM:
+        case TNUM:
             ss << "    CALLQ\t_lang_print_num\n";
             break;
-        case BOOL:
+        case TBOOL:
             ss << "    CALLQ\t_lang_print_bool\n";
             break;
         default:
