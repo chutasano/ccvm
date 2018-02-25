@@ -14,51 +14,17 @@ using namespace r0;
 
 //#define DEBUG
 
-P::P(const P &obj)
-{
-    this->e = obj.e->clone();
-}
+//MARKS
+//'p
+//'[n]um
+//'[b]ool
+//'[r]ead
+//'[t]wo args (Binop)
+//'[u]nop
+//'[v]ar
+//'[l]et
+//'[i]f
 
-void P::deep_delete()
-{
-    this->e->deep_delete();
-    delete this->e;
-}
-
-Num* Num::clone() const
-{
-    return new Num(this->value);
-}
-
-Bool* Bool::clone() const
-{
-    return new Bool(this->value);
-}
-
-Read* Read::clone() const
-{
-    return new Read();
-}
-
-Binop* Binop::clone() const
-{
-    return new Binop(this->op, this->l->clone(), this->r->clone());
-}
-
-Unop* Unop::clone() const
-{
-    return new Unop(this->op, this->v->clone());
-}
-
-Var* Var::clone() const
-{
-    return new Var(this->name);
-}
-
-Let* Let::clone() const
-{
-    return new Let(this->name, this->ve->clone(), this->be->clone());
-}
 
 // TODO fixme
 static unordered_map<string, unsigned int> count;
@@ -76,6 +42,17 @@ string gensym(string sym)
         count[sym] = 0;
     }
     return sym + "_" + to_string(id);
+}
+
+P::P(const P &obj)
+{
+    this->e = obj.e->clone();
+}
+
+void P::deep_delete()
+{
+    this->e->deep_delete();
+    delete this->e;
 }
 
 void P::uniquify()
@@ -108,60 +85,6 @@ bool P::is_unique() const
     return varnames.size() == uniquenames.size();
 }
 
-
-void Num::uniquify(unordered_map<string, string> m)
-{
-    return;
-}
-
-void Bool::uniquify(unordered_map<string, string> m)
-{
-    return;
-}
-
-void Read::uniquify(unordered_map<string, string> m)
-{
-    return;
-}
-
-void Binop::uniquify(unordered_map<string, string> m)
-{
-    this->l->uniquify(m);
-    this->r->uniquify(m);
-}
-
-void Unop::uniquify(unordered_map<string, string> m)
-{
-    this->v->uniquify(m);
-}
-
-void Var::uniquify(unordered_map<string, string> m)
-{
-    auto it = m.find(this->name); // FIXME const iterator will be the "right"
-                                  // thing to do instead of auto
-    if (it != m.end())
-    {
-#ifdef DEBUG
-        cout << "Uniquify var: changing " << this->name << " to " << it->second << endl;
-#endif
-        this->name = it->second;
-    }
-}
-
-void Let::uniquify(unordered_map<string, string> m)
-{
-    // uniquify the var expression first because the var expression should not
-    // have access to the var it's trying to define
-    this->ve->uniquify(m);
-
-    m[this->name] = gensym(this->name);
-#ifdef DEBUG
-    cout << "Uniquify let: changing " << this->name << " to " << m[this->name] << endl;
-#endif
-    this->name = m[this->name];
-    this->be->uniquify(m);
-}
-
 c0::P P::flatten() const
 {
     vector<string> vars;
@@ -176,15 +99,60 @@ c0::P P::flatten() const
     return c0::P(vars, stmts, a, t);
 }
 
+type P::type_check() const
+{
+    unordered_map<string, type> vars;
+    return this->e->t_check(vars);
+}
+
+Num* Num::clone() const
+{
+    return new Num(this->value);
+}
+
+void Num::uniquify(unordered_map<string, string> m)
+{
+    return;
+}
 
 c0::Arg* Num::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
      return new c0::Num(this->value);
 }
 
+type Num::t_check(unordered_map<string, type> vmap) const
+{
+    return NUM;
+}
+
+Bool* Bool::clone() const
+{
+    return new Bool(this->value);
+}
+
+void Bool::uniquify(unordered_map<string, string> m)
+{
+    return;
+}
+
 c0::Arg* Bool::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
      return new c0::Num(static_cast<int>(this->value));
+}
+
+type Bool::t_check(unordered_map<string, type> vmap) const
+{
+    return BOOL;
+}
+
+Read* Read::clone() const
+{
+    return new Read();
+}
+
+void Read::uniquify(unordered_map<string, string> m)
+{
+    return;
 }
 
 c0::Arg* Read::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
@@ -195,6 +163,23 @@ c0::Arg* Read::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
     return new c0::Var(s);
 }
 
+type Read::t_check(unordered_map<string, type> vmap) const
+{
+    return NUM;
+}
+
+
+Binop* Binop::clone() const
+{
+    return new Binop(this->op, this->l->clone(), this->r->clone());
+}
+
+void Binop::uniquify(unordered_map<string, string> m)
+{
+    this->l->uniquify(m);
+    this->r->uniquify(m);
+}
+
 c0::Arg* Binop::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
     string s = gensym("r0Binop");
@@ -203,47 +188,6 @@ c0::Arg* Binop::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
                     this->l->to_c0(vars, stmts),
                     this->r->to_c0(vars, stmts))));
     return new c0::Var(s);
-}
-
-c0::Arg* Unop::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
-{
-    string s = gensym("r0Unop");
-    vars.push_back(s);
-    stmts.push_back(c0::S(s, new c0::Unop(this->op, this->v->to_c0(vars, stmts))));
-    return new c0::Var(s);
-}
-
-c0::Arg* Var::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
-{
-    return new c0::Var(this->name);
-}
-
-c0::Arg* Let::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
-{
-    stmts.push_back(c0::S(this->name, this->ve->to_c0(vars, stmts)));
-    vars.push_back(this->name);
-    return this->be->to_c0(vars, stmts);
-}
-
-type P::type_check() const
-{
-    unordered_map<string, type> vars;
-    return this->e->t_check(vars);
-}
-
-type Num::t_check(unordered_map<string, type> vmap) const
-{
-    return NUM;
-}
-
-type Bool::t_check(unordered_map<string, type> vmap) const
-{
-    return BOOL;
-}
-
-type Read::t_check(unordered_map<string, type> vmap) const
-{
-    return NUM;
 }
 
 type Binop::t_check(unordered_map<string, type> vmap) const
@@ -290,6 +234,24 @@ type Binop::t_check(unordered_map<string, type> vmap) const
     }
 }
 
+Unop* Unop::clone() const
+{
+    return new Unop(this->op, this->v->clone());
+}
+
+void Unop::uniquify(unordered_map<string, string> m)
+{
+    this->v->uniquify(m);
+}
+
+c0::Arg* Unop::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
+{
+    string s = gensym("r0Unop");
+    vars.push_back(s);
+    stmts.push_back(c0::S(s, new c0::Unop(this->op, this->v->to_c0(vars, stmts))));
+    return new c0::Var(s);
+}
+
 type Unop::t_check(unordered_map<string, type> vmap) const
 {
     type vt = this->v->t_check(vmap);
@@ -329,9 +291,58 @@ type Unop::t_check(unordered_map<string, type> vmap) const
     }
 }
 
+Var* Var::clone() const
+{
+    return new Var(this->name);
+}
+
+void Var::uniquify(unordered_map<string, string> m)
+{
+    auto it = m.find(this->name); // FIXME const iterator will be the "right"
+                                  // thing to do instead of auto
+    if (it != m.end())
+    {
+#ifdef DEBUG
+        cout << "Uniquify var: changing " << this->name << " to " << it->second << endl;
+#endif
+        this->name = it->second;
+    }
+}
+
+c0::Arg* Var::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
+{
+    return new c0::Var(this->name);
+}
+
 type Var::t_check(unordered_map<string, type> vmap) const
 {
     return vmap.at(this->name);
+}
+
+Let* Let::clone() const
+{
+    return new Let(this->name, this->ve->clone(), this->be->clone());
+}
+
+void Let::uniquify(unordered_map<string, string> m)
+{
+    // uniquify the var expression first because the var expression should not
+    // have access to the var it's trying to define
+    this->ve->uniquify(m);
+
+    m[this->name] = gensym(this->name);
+#ifdef DEBUG
+    cout << "Uniquify let: changing " << this->name << " to " << m[this->name] << endl;
+#endif
+    this->name = m[this->name];
+    this->be->uniquify(m);
+}
+
+c0::Arg* Let::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
+{
+    stmts.push_back(c0::S(this->name, this->ve->to_c0(vars, stmts)));
+    vars.push_back(this->name);
+    return this->be->to_c0(vars, stmts);
 }
 
 type Let::t_check(unordered_map<string, type> vmap) const
@@ -339,4 +350,46 @@ type Let::t_check(unordered_map<string, type> vmap) const
     vmap[this->name] = this->ve->t_check(vmap);
     return this->be->t_check(vmap);
 }
+
+If* If::clone() const
+{
+    return new If(conde->clone(), thene->clone(), elsee->clone());
+}
+
+void If::uniquify(unordered_map<string, string> m)
+{
+    conde->uniquify(m);
+    thene->uniquify(m);
+    elsee->uniquify(m);
+}
+
+c0::Arg* If::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
+{
+    // TODO
+    string s = gensym("r0If");
+    vars.push_back(s);
+    stmts.push_back(c0::S(s, new c0::Num(10)));
+    return new c0::Var(s);
+}
+
+type If::t_check(unordered_map<string, type> vmap) const
+{
+    if (conde->t_check(vmap) != BOOL)
+    {
+        cerr << "If: cond expression does not have type bool\n";
+        return ERROR;
+    }
+    type thent = thene->t_check(vmap);
+    type elset = elsee->t_check(vmap);
+    if (thent == elset)
+    {
+        return thent; // if both are ERROR, we'll catch it from the ret anyway
+    }
+    else
+    {
+        cerr << "If: then and else expression types not matching\n";
+        return ERROR;
+    }
+}
+
 
