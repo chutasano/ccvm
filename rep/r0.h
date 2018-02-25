@@ -1,8 +1,8 @@
 #pragma once
 
-#include <map>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "c0.h"
 #include "operators.h"
@@ -20,9 +20,9 @@ namespace r0
     {
         virtual ~E() { }
         virtual std::vector<E*> get_childs() = 0;
-        virtual void uniquify(std::map<std::string, std::string>) = 0;
-        virtual type t_check(std::map<std::string, type>) = 0;
-        virtual c0::Arg* to_c0() = 0;
+        virtual void uniquify(std::unordered_map<std::string, std::string>) = 0;
+        virtual type t_check(std::unordered_map<std::string, type>) const = 0;
+        virtual c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const = 0;
         virtual E* clone() const = 0;
         virtual void deep_delete() = 0;
     };
@@ -33,10 +33,10 @@ namespace r0
         P(const P &obj);
         E* e;
         void deep_delete();
-        bool is_unique();
+        bool is_unique() const;
         void uniquify();
-        type type_check();
-        c0::P flatten();
+        type type_check() const;
+        c0::P flatten() const;
     };
 
     struct Num : E
@@ -44,9 +44,9 @@ namespace r0
         Num(int64_t v) { value = v; }
         int64_t value;
         std::vector<E*> get_childs() { return {}; }
-        void uniquify(std::map<std::string, std::string>);
-        type t_check(std::map<std::string, type>);
-        c0::Arg* to_c0();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string , type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
         Num* clone() const;
         void deep_delete() { }
     };
@@ -56,9 +56,9 @@ namespace r0
         Bool(bool_val v) { value = v; }
         bool_val value;
         std::vector<E*> get_childs() { return {}; }
-        void uniquify(std::map<std::string, std::string>);
-        type t_check(std::map<std::string, type>);
-        c0::Arg* to_c0();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string , type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
         Bool* clone() const;
         void deep_delete() { }
     };
@@ -67,9 +67,9 @@ namespace r0
     {
         Read() { }
         std::vector<E*> get_childs() { return {}; }
-        void uniquify(std::map<std::string, std::string>);
-        type t_check(std::map<std::string, type>);
-        c0::Arg* to_c0();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string , type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
         Read* clone() const;
         void deep_delete() { }
     };
@@ -81,9 +81,9 @@ namespace r0
         E* l;
         E* r;
         std::vector<E*> get_childs() { return {l, r}; }
-        void uniquify(std::map<std::string, std::string>);
-        type t_check(std::map<std::string, type>);
-        c0::Arg* to_c0();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string , type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
         Binop* clone() const;
         void deep_delete() { this->l->deep_delete(); this->r->deep_delete(); delete this->l; delete this->r; }
     };
@@ -94,9 +94,9 @@ namespace r0
         u_ops op;
         E* v;
         std::vector<E*> get_childs() { return {v}; }
-        void uniquify(std::map<std::string, std::string>);
-        type t_check(std::map<std::string, type>);
-        c0::Arg* to_c0();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string , type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
         Unop* clone() const;
         void deep_delete() { this->v->deep_delete(); delete this->v; }
     };
@@ -106,9 +106,9 @@ namespace r0
         Var(std::string varname) { name = varname; }
         std::string name;
         std::vector<E*> get_childs() { return {}; }
-        void uniquify(std::map<std::string, std::string>);
-        type t_check(std::map<std::string, type>);
-        c0::Arg* to_c0();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string , type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
         Var* clone() const;
         void deep_delete() { }
     };
@@ -120,11 +120,26 @@ namespace r0
         E* ve;
         E* be;
         std::vector<E*> get_childs() { return {ve, be}; }
-        void uniquify(std::map<std::string, std::string>);
-        type t_check(std::map<std::string, type>);
-        c0::Arg* to_c0();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string , type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
         Let* clone() const;
         void deep_delete() { this->ve->deep_delete(); this->be->deep_delete(); delete this->ve; delete this->be; }
+    };
+
+    struct If : E
+    {
+        If(E* cexp, E* thenexp, E* elseexp) : conde(cexp), thene(thenexp), elsee(elseexp) { }
+        E* conde;
+        E* thene;
+        E* elsee;
+        std::vector<E*> get_childs() { return { conde, thene, elsee}; }
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string, type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::S> &stmts) const;
+        If* clone() const;
+        void deep_delete() { this->conde->deep_delete(); this->thene->deep_delete(); this->elsee->deep_delete();
+            delete this->conde; delete this->thene; delete this->elsee; }
     };
 }
 

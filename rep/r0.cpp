@@ -1,9 +1,9 @@
 #include <iostream>
-#include <map>
 #include <queue>
 #include <typeinfo>
 #include <set>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 #include "c0.h"
@@ -61,7 +61,7 @@ Let* Let::clone() const
 }
 
 // TODO fixme
-static map<string, unsigned int> count;
+static unordered_map<string, unsigned int> count;
 
 string gensym(string sym)
 {
@@ -81,11 +81,11 @@ string gensym(string sym)
 void P::uniquify()
 {
     count.clear();
-    map<string, string> varmap;
+    unordered_map<string, string> varmap;
     this->e->uniquify(varmap);
 }
 
-bool P::is_unique()
+bool P::is_unique() const
 {
     vector<string> varnames; // FIXME is vector overkill for finding duplicates?
     queue<E*> nodes;
@@ -109,33 +109,33 @@ bool P::is_unique()
 }
 
 
-void Num::uniquify(map<string, string> m)
+void Num::uniquify(unordered_map<string, string> m)
 {
     return;
 }
 
-void Bool::uniquify(map<string, string> m)
+void Bool::uniquify(unordered_map<string, string> m)
 {
     return;
 }
 
-void Read::uniquify(map<string, string> m)
+void Read::uniquify(unordered_map<string, string> m)
 {
     return;
 }
 
-void Binop::uniquify(map<string, string> m)
+void Binop::uniquify(unordered_map<string, string> m)
 {
     this->l->uniquify(m);
     this->r->uniquify(m);
 }
 
-void Unop::uniquify(map<string, string> m)
+void Unop::uniquify(unordered_map<string, string> m)
 {
     this->v->uniquify(m);
 }
 
-void Var::uniquify(map<string, string> m)
+void Var::uniquify(unordered_map<string, string> m)
 {
     auto it = m.find(this->name); // FIXME const iterator will be the "right"
                                   // thing to do instead of auto
@@ -148,7 +148,7 @@ void Var::uniquify(map<string, string> m)
     }
 }
 
-void Let::uniquify(map<string, string> m)
+void Let::uniquify(unordered_map<string, string> m)
 {
     // uniquify the var expression first because the var expression should not
     // have access to the var it's trying to define
@@ -162,15 +162,11 @@ void Let::uniquify(map<string, string> m)
     this->be->uniquify(m);
 }
 
-// TODO FIXME TODO TODO TODO
-vector<string> vars;
-vector<c0::S> stmts;
-
-c0::P P::flatten()
+c0::P P::flatten() const
 {
-    vars.clear();
-    stmts.clear();
-    c0::Arg* a = this->e->to_c0();
+    vector<string> vars;
+    vector<c0::S> stmts;
+    c0::Arg* a = this->e->to_c0(vars, stmts);
     type t = this->type_check();
     if (t == ERROR)
     {
@@ -181,17 +177,17 @@ c0::P P::flatten()
 }
 
 
-c0::Arg* Num::to_c0()
+c0::Arg* Num::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
      return new c0::Num(this->value);
 }
 
-c0::Arg* Bool::to_c0()
+c0::Arg* Bool::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
      return new c0::Num(static_cast<int>(this->value));
 }
 
-c0::Arg* Read::to_c0()
+c0::Arg* Read::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
     string s = gensym("r0Read");
     vars.push_back(s);
@@ -199,58 +195,58 @@ c0::Arg* Read::to_c0()
     return new c0::Var(s);
 }
 
-c0::Arg* Binop::to_c0()
+c0::Arg* Binop::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
     string s = gensym("r0Binop");
     vars.push_back(s);
     stmts.push_back(c0::S(s, new c0::Binop(this->op,
-                    this->l->to_c0(),
-                    this->r->to_c0())));
+                    this->l->to_c0(vars, stmts),
+                    this->r->to_c0(vars, stmts))));
     return new c0::Var(s);
 }
 
-c0::Arg* Unop::to_c0()
+c0::Arg* Unop::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
     string s = gensym("r0Unop");
     vars.push_back(s);
-    stmts.push_back(c0::S(s, new c0::Unop(this->op, this->v->to_c0())));
+    stmts.push_back(c0::S(s, new c0::Unop(this->op, this->v->to_c0(vars, stmts))));
     return new c0::Var(s);
 }
 
-c0::Arg* Var::to_c0()
+c0::Arg* Var::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
     return new c0::Var(this->name);
 }
 
-c0::Arg* Let::to_c0()
+c0::Arg* Let::to_c0(vector<string> &vars, vector<c0::S> &stmts) const
 {
-    stmts.push_back(c0::S(this->name, this->ve->to_c0()));
+    stmts.push_back(c0::S(this->name, this->ve->to_c0(vars, stmts)));
     vars.push_back(this->name);
-    return this->be->to_c0();
+    return this->be->to_c0(vars, stmts);
 }
 
-type P::type_check()
+type P::type_check() const
 {
-    map<string, type> vars;
+    unordered_map<string, type> vars;
     return this->e->t_check(vars);
 }
 
-type Num::t_check(map<string, type> vmap)
+type Num::t_check(unordered_map<string, type> vmap) const
 {
     return NUM;
 }
 
-type Bool::t_check(map<string, type> vmap)
+type Bool::t_check(unordered_map<string, type> vmap) const
 {
     return BOOL;
 }
 
-type Read::t_check(map<string, type> vmap)
+type Read::t_check(unordered_map<string, type> vmap) const
 {
     return NUM;
 }
 
-type Binop::t_check(map<string, type> vmap)
+type Binop::t_check(unordered_map<string, type> vmap) const
 {
     type lt = this->l->t_check(vmap);
     type rt = this->r->t_check(vmap);
@@ -294,7 +290,7 @@ type Binop::t_check(map<string, type> vmap)
     }
 }
 
-type Unop::t_check(map<string, type> vmap)
+type Unop::t_check(unordered_map<string, type> vmap) const
 {
     type vt = this->v->t_check(vmap);
     if (vt == ERROR)
@@ -333,12 +329,12 @@ type Unop::t_check(map<string, type> vmap)
     }
 }
 
-type Var::t_check(map<string, type> vmap)
+type Var::t_check(unordered_map<string, type> vmap) const
 {
     return vmap.at(this->name);
 }
 
-type Let::t_check(map<string, type> vmap)
+type Let::t_check(unordered_map<string, type> vmap) const
 {
     vmap[this->name] = this->ve->t_check(vmap);
     return this->be->t_check(vmap);
