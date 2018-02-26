@@ -55,55 +55,64 @@ namespace x0
         virtual std::string to_asm() = 0;
     };
 
-    struct Label : I
+    struct ILabel : I
     {
-        Label(std::string n) : name(n) { }
+        ILabel(std::string n) : name(n) { }
         std::string name;
         std::string to_asm();
     };
 
-    struct NoArg : I
+    struct INoArg : I
     {
-        NoArg(no_arg i) : instr(i) { }
-        no_arg instr;
+        INoArg(no_arg_instr i) : instr(i) { }
+        no_arg_instr instr;
         std::string to_asm();
     };
 
-    struct OneSrc : I
+    struct ISrc : I
     {
-        OneSrc(one_src i, Arg* s) : instr(i), src(s) { }
-        one_src instr;
+        ISrc(src_instr i, Arg* s) : instr(i), src(s) { }
+        src_instr instr;
         Arg* src;
         std::string to_asm();
     };
 
-    struct OneDst : I
+    struct IDst : I
     {
-        OneDst(one_dst i, Dst* d) : instr(i), dst(d) { }
-        one_dst instr;
+        IDst(dst_instr i, Dst* d) : instr(i), dst(d) { }
+        dst_instr instr;
         Dst* dst;
         std::string to_asm();
     };
 
-    struct TwoArg : I
+    struct ISrcDst : I
     {
-        TwoArg(two_arg i, Arg* s, Dst* d) : instr(i), src(s), dst(d) { }
-        two_arg instr;
+        ISrcDst(src_dst_instr i, Arg* s, Dst* d) : instr(i), src(s), dst(d) { }
+        src_dst_instr instr;
         Arg* src;
         Dst* dst;
         std::string to_asm();
     };
 
-    struct Call : I
+    struct ISrcSrc : I
     {
-        Call(std::string l) : label(l) { }
+        ISrcSrc(src_src_instr i, Arg* s, Arg* s2) : instr(i), src(s), src2(s2) { }
+        src_src_instr instr;
+        Arg* src;
+        Arg* src2;
+        std::string to_asm();
+    };
+
+    struct ICall : I
+    {
+        ICall(std::string l) : label(l) { }
         std::string label;
         std::string to_asm();
     };
 
-    struct Ret : I
+    struct IRet : I
     {
-        Ret(type ty) : t(ty) {  }
+        IRet(type ty) : t(ty) {  }
         type t;
         std::string to_asm();
     };

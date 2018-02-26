@@ -26,6 +26,15 @@ namespace x0s
         x0::Arg* assign();
     };
 
+    struct Reg8 : Dst
+    {
+        Reg8(std::string n) : name(n) { }
+        // the register name without the %
+        // example: rax
+        std::string name;
+        x0::Arg* assign();
+    };
+
     struct Var : Dst
     {
         Var(std::string n) : var(n) { }
@@ -47,53 +56,63 @@ namespace x0s
         virtual std::list<std::string> get_vars() = 0;
     };
 
-    struct NoArg : I
+    struct INoArg : I
     {
-        NoArg(no_arg i) : instr(i) { }
-        no_arg instr;
+        INoArg(no_arg_instr i) : instr(i) { }
+        no_arg_instr instr;
         x0::I* assign();
         std::list<std::string> get_vars();
     };
 
-    struct OneSrc : I
+    struct ISrc : I
     {
-        OneSrc(one_src i, Arg* s) : instr(i), src(s) { }
-        one_src instr;
+        ISrc(src_instr i, Arg* s) : instr(i), src(s) { }
+        src_instr instr;
         Arg* src;
         x0::I* assign();
         std::list<std::string> get_vars();
     };
 
-    struct OneDst : I
+    struct IDst : I
     {
-        OneDst(one_dst i, Dst* d) : instr(i), dst(d) { }
-        one_dst instr;
+        IDst(dst_instr i, Dst* d) : instr(i), dst(d) { }
+        dst_instr instr;
         Dst* dst;
         x0::I* assign();
         std::list<std::string> get_vars();
     };
 
-    struct TwoArg : I
+    struct ISrcDst : I
     {
-        TwoArg(two_arg i, Arg* s, Dst* d) : instr(i), src(s), dst(d) { }
-        two_arg instr;
+        ISrcDst(src_dst_instr i, Arg* s, Dst* d) : instr(i), src(s), dst(d) { }
+        src_dst_instr instr;
         Arg* src;
         Dst* dst;
         x0::I* assign();
         std::list<std::string> get_vars();
     };
 
-    struct Call : I
+    struct ISrcSrc : I
     {
-        Call(std::string l) : label(l) { }
+        ISrcSrc(src_src_instr i, Arg* s, Arg* s2) : instr(i), src(s), src2(s2) { }
+        src_src_instr instr;
+        Arg* src;
+        Arg* src2;
+        x0::I* assign();
+        std::list<std::string> get_vars();
+    };
+
+    struct ICall : I
+    {
+        ICall(std::string l) : label(l) { }
         std::string label;
         x0::I* assign();
         std::list<std::string> get_vars();
     };
 
-    struct Ret : I
+    struct IRet : I
     {
-        Ret(Arg* a) : arg(a) { }
+        IRet(Arg* a) : arg(a) { }
         Arg* arg;
         x0::I* assign();
         std::list<std::string> get_vars();

@@ -104,26 +104,26 @@ x0::P P::assign()
         }
     }
     list<x0::I*> ins;
-    ins.push_back(new x0::Label("main"));
+    ins.push_back(new x0::ILabel("main"));
     int total_offset;
     bool need_stack = worst >= regs.size();
     if (need_stack)
     {
         total_offset = 8*(worst - regs.size() + 1);
-        ins.push_back(new x0::TwoArg(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+        ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     }
     for (auto iptr : this->instr)
     {
         // temp hack FIXME
-        if (typeid(*iptr) == typeid(Ret))
+        if (typeid(*iptr) == typeid(IRet))
         {
-            auto r = static_cast<Ret*>(iptr);
-            ins.push_back(new x0::TwoArg(MOVQ, r->arg->assign(), new x0::Reg("rax")));
+            auto r = static_cast<IRet*>(iptr);
+            ins.push_back(new x0::ISrcDst(MOVQ, r->arg->assign(), new x0::Reg("rax")));
             if (need_stack)
             {
-                ins.push_back(new x0::TwoArg(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+                ins.push_back(new x0::ISrcDst(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
             }
-            ins.push_back(new x0::Ret(this->t));
+            ins.push_back(new x0::IRet(this->t));
         }
         else
         {
@@ -136,6 +136,11 @@ x0::P P::assign()
 x0::Arg* Reg::assign()
 {
     return new x0::Reg(this->name);
+}
+
+x0::Arg* Reg8::assign()
+{
+    return new x0::Reg8(this->name);
 }
 
 x0::Arg* Var::assign()
@@ -156,44 +161,47 @@ x0::Arg* Con::assign()
     return new x0::Con(this->val);
 }
 
-x0::I* NoArg::assign()
+x0::I* INoArg::assign()
 {
-    return new x0::NoArg(this->instr);
+    return new x0::INoArg(this->instr);
 }
 
-x0::I* OneSrc::assign()
+x0::I* ISrc::assign()
 {
-    return new x0::OneSrc(this->instr, this->src->assign());
+    return new x0::ISrc(this->instr, this->src->assign());
 }
-x0::I* OneDst::assign()
-{
-    // evil hax
-    x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign());
-    return new x0::OneDst(this->instr, d);
-}
-x0::I* TwoArg::assign()
+x0::I* IDst::assign()
 {
     x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign());
-    return new x0::TwoArg(this->instr, this->src->assign(), d);
+    return new x0::IDst(this->instr, d);
 }
-
-x0::I* Call::assign()
+x0::I* ISrcDst::assign()
 {
-    return new x0::Call(this->label);
+    x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign());
+    return new x0::ISrcDst(this->instr, this->src->assign(), d);
+}
+x0::I* ISrcSrc::assign()
+{
+    return new x0::ISrcSrc(this->instr, this->src->assign(), this->src2->assign());
 }
 
-x0::I* Ret::assign()
+x0::I* ICall::assign()
+{
+    return new x0::ICall(this->label);
+}
+
+x0::I* IRet::assign()
 {
     // TODO fix
-    return new x0::Ret(TBOOL);
+    return new x0::IRet(TBOOL);
 }
 
-list<string> NoArg::get_vars()
+list<string> INoArg::get_vars()
 {
     return { };
 }
 
-list<string> OneSrc::get_vars()
+list<string> ISrc::get_vars()
 {
     if (typeid(*(this->src)) == typeid(Var))
     {
@@ -205,7 +213,7 @@ list<string> OneSrc::get_vars()
     }
 }
 
-list<string> OneDst::get_vars()
+list<string> IDst::get_vars()
 {
     if (typeid(*(this->dst)) == typeid(Var))
     {
@@ -217,7 +225,7 @@ list<string> OneDst::get_vars()
     }
 }
 
-list<string> TwoArg::get_vars()
+list<string> ISrcDst::get_vars()
 {
     list<string> a;
     if (typeid(*(this->src)) == typeid(Var))
@@ -231,12 +239,27 @@ list<string> TwoArg::get_vars()
     return a;
 }
 
-list<string> Call::get_vars()
+list<string> ISrcSrc::get_vars()
+{
+    list<string> a;
+    if (typeid(*(this->src)) == typeid(Var))
+    {
+        a.push_back(static_cast<Var*>(this->src)->var);
+    }
+    if (typeid(*(this->src2)) == typeid(Var))
+    {
+        a.push_back(static_cast<Var*>(this->src2)->var);
+    }
+    return a;
+}
+
+
+list<string> ICall::get_vars()
 {
     return { };
 }
 
-list<string> Ret::get_vars()
+list<string> IRet::get_vars()
 {
     if (typeid(*(this->arg)) == typeid(Var))
     {

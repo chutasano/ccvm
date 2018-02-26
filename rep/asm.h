@@ -7,14 +7,19 @@
 #define X0_NO_ARG  \
     ES(RETQ)
 
-#define X0_ONE_DST \
+#define X0_DST \
     ES(NEGQ)       \
-    ES(POPQ)
+    ES(POPQ)       \
+    ES(SETE)       \
+    ES(SETL)       \
+    ES(SETG)       \
+    ES(SETLE)      \
+    ES(SETGE)       
 
-#define X0_ONE_SRC \
+#define X0_SRC \
     ES(PUSHQ)
 
-#define X0_TWO_ARG \
+#define X0_SRC_DST \
     ES(ADDQ)       \
     ES(SUBQ)       \
     ES(MOVQ)       \
@@ -22,57 +27,70 @@
     ES(CMPQ)       \
     ES(MOVZBQ)
 
+#define X0_SRC_SRC 
 
-enum no_arg 
+enum no_arg_instr
 {
     X0_NO_ARG
         NO_ARG_COUNT
 };
 
-enum one_src
+enum src_instr
 {
-    X0_ONE_SRC
-        ONE_SRC_COUNT
+    X0_SRC
+        SRC_COUNT
 };
 
-enum one_dst
+enum dst_instr
 {
-    X0_ONE_DST
-        ONE_DST_COUNT
+    X0_DST
+        DST_COUNT
 };
 
-enum two_arg
+enum src_dst_instr
 {
-    X0_TWO_ARG
-        TWO_ARG_COUNT
+    X0_SRC_DST
+        SRC_DST_COUNT
+};
+
+enum src_src_instr
+{
+    X0_SRC_SRC
+        SRC_SRC_COUNT
 };
 
 #undef ES
 #define ES(x) #x,
 
 // assumes C++
-static inline const char * const i2string(no_arg id)
+static inline const char * const i2string(no_arg_instr id)
 {
     return (const char *[]) {
         X0_NO_ARG
     }[id];
 }
-static inline const char * const i2string(one_src id)
+static inline const char * const i2string(src_instr id)
 {
     return (const char *[]) {
-        X0_ONE_SRC
+        X0_SRC
     }[id];
 }
-static inline const char * const i2string(one_dst id)
+static inline const char * const i2string(dst_instr id)
 {
     return (const char *[]) {
-        X0_ONE_DST
+        X0_DST
     }[id];
 }
-static inline const char * const i2string(two_arg id)
+static inline const char * const i2string(src_dst_instr id)
 {
     return (const char *[]) {
-        X0_TWO_ARG
+        X0_SRC_DST
+    }[id];
+}
+static inline const char * const i2string(src_src_instr id)
+{
+    return (const char *[]) {
+        X0_SRC_SRC
     }[id];
 }
 

@@ -27,6 +27,11 @@ string Reg::to_string()
     return "%" + this->name;
 }
 
+string Reg8::to_string()
+{
+    return "%" + this->name;
+}
+
 string Con::to_string()
 {
     stringstream ss;
@@ -46,37 +51,42 @@ string Mem::to_string()
     }
 }
 
-string Label::to_asm()
+string ILabel::to_asm()
 {
     return name + ":";
 }
 
-string NoArg::to_asm()
+string INoArg::to_asm()
 {
     return i2string(this->instr);
 }
 
-string OneSrc::to_asm()
+string ISrc::to_asm()
 {
     return i2string(this->instr) + string("\t") + this->src->to_string();
 }
 
-string OneDst::to_asm()
+string IDst::to_asm()
 {
     return i2string(this->instr) + string("\t") + this->dst->to_string();
 }
 
-string TwoArg::to_asm()
+string ISrcDst::to_asm()
 {
     return i2string(this->instr) + string("\t") + this->src->to_string() + ", " + this->dst->to_string();
 }
 
-string Call::to_asm()
+string ISrcSrc::to_asm()
+{
+    return i2string(this->instr) + string("\t") + this->src->to_string() + ", " + this->src2->to_string();
+}
+
+string ICall::to_asm()
 {
     return "CALLQ\t" + this->label;
 }
 
-string Ret::to_asm()
+string IRet::to_asm()
 {
     // prints out the final value because simply returning
     // won't give us 64 bits (Linux gives 8 bits)
@@ -108,9 +118,9 @@ void P::fix()
     {
         // I think it's okay to do a little hack here; only TwoArg needs fixing
         // so I'd need a bunch of stubs if I were to do it OO
-        if (typeid(**it) == typeid(TwoArg))
+        if (typeid(**it) == typeid(ISrcDst))
         {
-            auto i = static_cast<TwoArg*>(*it);
+            auto i = static_cast<ISrcDst*>(*it);
             if (i->instr == MOVQ &&
                     typeid(*(i->src)) == typeid(Reg) &&
                     typeid(*(i->dst)) == typeid(Reg) &&
@@ -124,7 +134,7 @@ void P::fix()
                 if (typeid(*(i->src)) == typeid(Mem) &&
                         typeid(*(i->dst)) == typeid(Mem))
                 {
-                    TwoArg* movq = new TwoArg(MOVQ, i->src, new Reg("rax"));
+                    ISrcDst* movq = new ISrcDst(MOVQ, i->src, new Reg("rax"));
                     i->src = new Reg("rax");
                     it = this->instr.insert(it, movq);
                 }
