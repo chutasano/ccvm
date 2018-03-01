@@ -29,6 +29,14 @@
 
 #define X0_SRC_SRC 
 
+#define X0_CALL \
+    ES(CALLQ)    \
+    ES(JE)      \
+    ES(JL)      \
+    ES(JG)      \
+    ES(JLE)     \
+    ES(JGE)
+
 enum no_arg_instr
 {
     X0_NO_ARG
@@ -57,6 +65,12 @@ enum src_src_instr
 {
     X0_SRC_SRC
         SRC_SRC_COUNT
+};
+
+enum call_instr
+{
+    X0_CALL
+        CALL_COUNT
 };
 
 #undef ES
@@ -91,6 +105,12 @@ static inline const char * const i2string(src_src_instr id)
 {
     return (const char *[]) {
         X0_SRC_SRC
+    }[id];
+}
+static inline const char * const i2string(call_instr id)
+{
+    return (const char *[]) {
+        X0_CALL
     }[id];
 }
 

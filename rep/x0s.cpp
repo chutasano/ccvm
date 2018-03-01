@@ -185,9 +185,20 @@ x0::I* ISrcSrc::assign()
     return new x0::ISrcSrc(this->instr, this->src->assign(), this->src2->assign());
 }
 
+x0::I* IIf::assign()
+{
+    // TODO
+    return new x0::ILabel("woof");
+}
+
 x0::I* ICall::assign()
 {
-    return new x0::ICall(this->label);
+    return new x0::ICall(this->instr, this->label);
+}
+
+x0::I* ILabel::assign()
+{
+    return new x0::ILabel(this->name);
 }
 
 x0::I* IRet::assign()
@@ -253,8 +264,30 @@ list<string> ISrcSrc::get_vars()
     return a;
 }
 
+list<string> IIf::get_vars()
+{
+    list<string> a;
+    for (auto i : ifi)
+    {
+        a.splice(a.end(), i->get_vars());
+    }
+    for (auto i: elsei)
+    {
+        a.splice(a.end(), i->get_vars());
+    }
+    for (auto i: theni)
+    {
+        a.splice(a.end(), i->get_vars());
+    }
+    return a;
+}
 
 list<string> ICall::get_vars()
+{
+    return { };
+}
+
+list<string> ILabel::get_vars()
 {
     return { };
 }

@@ -105,7 +105,8 @@ namespace x0
 
     struct ICall : I
     {
-        ICall(std::string l) : label(l) { }
+        ICall(call_instr ca, std::string l) : instr(ca), label(l) { }
+        call_instr instr;
         std::string label;
         std::string to_asm();
     };

@@ -368,10 +368,27 @@ void If::uniquify(unordered_map<string, string> m)
 
 c0::Arg* If::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
 {
-    // TODO
     string s = gensym("r0If");
     vars.push_back(s);
-    stmts.push_back(new c0::S(s, new c0::Num(10)));
+    c0::Binop* c0bin; // TODO fix optimization, will not optimize
+                      // a Let(Binop()) case
+    if (typeid(*conde) == typeid(Binop))
+    {
+        Binop* cb = static_cast<Binop*>(conde);
+        c0::Arg* l = cb->l->to_c0(vars, stmts);
+        c0::Arg* r = cb->r->to_c0(vars, stmts);
+        c0bin = new c0::Binop(cb->op, l, r);
+    }
+    else
+    {
+        c0::Arg* condv = conde->to_c0(vars, stmts);
+        c0bin = new c0::Binop(B_EQ, new c0::Num(1), condv);
+    }
+    vector<c0::AS*> thenstmts;
+    vector<c0::AS*> elsestmts;
+    c0::Arg* thenv = thene->to_c0(vars, thenstmts);
+    c0::Arg* elsev = elsee->to_c0(vars, elsestmts);
+    stmts.push_back(new c0::If(s, c0bin , thenv, thenstmts, elsev, elsestmts));
     return new c0::Var(s);
 }
 

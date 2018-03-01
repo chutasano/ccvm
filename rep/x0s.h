@@ -102,14 +102,34 @@ namespace x0s
         std::list<std::string> get_vars();
     };
 
+    // group if statements for var liveliness analysis
+    struct IIf : I
+    {
+        IIf(std::list<I*> iif, std::list<I*> ithen, std::list<I*> ielse) : ifi(iif), theni(ithen), elsei(ielse) { }
+        // don't need to abstract conditions here
+        std::list<I*> ifi;
+        std::list<I*> theni;
+        std::list<I*> elsei;
+        x0::I* assign();
+        std::list<std::string> get_vars();
+    };
+
     struct ICall : I
     {
-        ICall(std::string l) : label(l) { }
+        ICall(call_instr ca, std::string l) : instr(ca), label(l) { }
+        call_instr instr;
         std::string label;
         x0::I* assign();
         std::list<std::string> get_vars();
     };
 
+    struct ILabel : I
+    {
+        ILabel(std::string n) : name(n) { }
+        std::string name;
+        x0::I* assign();
+        std::list<std::string> get_vars();
+    };
     struct IRet : I
     {
         IRet(Arg* a) : arg(a) { }

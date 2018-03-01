@@ -43,23 +43,6 @@ namespace c0
         virtual std::list<x0s::I*> select() = 0;
     };
 
-    //stmt
-    struct S : AS
-    {
-        S(std::string s, E* ee) : v(s), e(ee) { }
-        std::string v;
-        E* e;
-        std::list<x0s::I*> select();
-    };
-
-    struct If : AS
-    {
-        If(E* ee, S thenstmt, S elsestmt) : conde(ee), thens(thenstmt), elses(elsestmt) { }
-        E* conde;
-        S thens;
-        S elses;
-        std::list<x0s::I*> select();
-    };
 
     struct Read : E
     {
@@ -82,6 +65,28 @@ namespace c0
         u_ops op;
         Arg* v;
         std::list<x0s::I*> select(x0s::Dst*);
+    };
+
+    //stmt
+    struct S : AS
+    {
+        S(std::string s, E* ee) : v(s), e(ee) { }
+        std::string v;
+        E* e;
+        std::list<x0s::I*> select();
+    };
+
+    struct If : AS
+    {
+        If(std::string v, Binop* bo, Arg* thenvar, std::vector<AS*> thenstmts, Arg* elsevar, std::vector<AS*> elsestmts) :
+            v(v), conde(bo), thens(thenstmts), elses(elsestmts), thenv(thenvar), elsev(elsevar) { }
+        std::string v;
+        Binop* conde;
+        std::vector<AS*> thens;
+        std::vector<AS*> elses;
+        Arg* thenv;
+        Arg* elsev;
+        std::list<x0s::I*> select();
     };
 
     struct P

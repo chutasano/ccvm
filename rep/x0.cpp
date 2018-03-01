@@ -116,7 +116,7 @@ void P::fix()
     // can't ++it in the for loop because erase will advance iterator
     for (auto it = begin(this->instr); it != end(this->instr);)
     {
-        // I think it's okay to do a little hack here; only TwoArg needs fixing
+        // I think it's okay to do a little hack here; only ISrcDst needs fixing
         // so I'd need a bunch of stubs if I were to do it OO
         if (typeid(**it) == typeid(ISrcDst))
         {

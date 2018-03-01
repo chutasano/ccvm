@@ -27,7 +27,7 @@ list<x0s::I*> Arg::select(x0s::Dst* var)
 
 list<x0s::I*> Read::select(x0s::Dst* var)
 {
-    return { new x0s::ICall("_lang_read_num"),
+    return { new x0s::ICall(CALLQ, "_lang_read_num"),
              new x0s::ISrcDst(MOVQ, new x0s::Reg("rax"), var) };
 }
 
@@ -88,6 +88,58 @@ list<x0s::I*> Unop::select(x0s::Dst* var)
 list<x0s::I*> S::select()
 {
     return this->e->select(new x0s::Var(this->v));
+}
+
+
+list<x0s::I*> If::select()
+{
+    x0s::Dst* var = new x0s::Reg("Rax"); // TODO?
+    x0s::Var* tv = new x0s::Var(this->v);
+    list<x0s::I*> l = {
+        new x0s::ISrcDst(MOVQ, this->conde->l->to_arg(), var),
+        new x0s::ISrcDst(CMPQ, this->conde->r->to_arg(), var) };
+    string thenlabel = this->v + "_then";
+    string donelabel = this->v + "_done";
+    switch(this->conde->op)
+    {
+        case B_EQ:
+            l.push_back(new x0s::ICall(JE, thenlabel));
+            break;
+        case B_LT:
+            l.push_back(new x0s::ICall(JL, thenlabel));
+            break;
+        case B_GT:
+            l.push_back(new x0s::ICall(JG, thenlabel));
+            break;
+        case B_LE:
+            l.push_back(new x0s::ICall(JLE, thenlabel));
+            break;
+        case B_GE:
+            l.push_back(new x0s::ICall(JGE, thenlabel));
+            break;
+        default:
+            std::cout << "\tc0If: WARN: unknown binary operator: " << this->conde->op << "\n";
+            return { };
+    }
+    list<x0s::I*> elsei;
+    for (auto s : elses)
+    {
+        list<x0s::I*> is = s->select();
+        elsei.splice(elsei.end(), is);
+    }
+    elsei.push_back(new x0s::ISrcDst(MOVQ, elsev->to_arg(), tv));
+    elsei.push_back(new x0s::ICall(CALLQ, donelabel));
+    elsei.push_back(new x0s::ILabel(thenlabel));
+
+    list<x0s::I*> theni;
+    for (auto s : thens)
+    {
+        list<x0s::I*> is = s->select();
+        theni.splice(theni.end(), is);
+    }
+    theni.push_back(new x0s::ISrcDst(MOVQ, thenv->to_arg(), tv));
+    theni.push_back(new x0s::ILabel(donelabel));
+    return { new x0s::IIf(l, theni, elsei) };
 }
 
 x0s::P P::select()
