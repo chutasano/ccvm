@@ -88,6 +88,11 @@ int eval(const E* e, map<string, int> vmap)
         vmap[l->name] = eval(l->ve, vmap);
         return eval(l->be, vmap);
     }
+    else if (typeid(*e) == typeid(If))
+    {
+        auto i = static_cast<const If*>(e);
+        return (eval(i->conde, vmap) == TB_TRUE) ? eval(i->thene, vmap) : eval(i->elsee, vmap);
+    }
     else
     {
         if (typeid(e) == typeid(const E*))

@@ -40,6 +40,9 @@
 // UNOP
 #define UNOP(...) UPTR(r0::Unop, __VA_ARGS__)
 
+// UNOP
+#define IF(...) UPTR(r0::If, __VA_ARGS__)
+
 // operation specifics, might be too much work to maintain if we add more operators
 
 #define PLUS(lexp, rexp) BINOP(bplus_ ## lexp ## _ ## rexp, B_PLUS, lexp, rexp)
@@ -334,6 +337,25 @@ void test_all()
         tt(bge_n10_nn1, TBOOL);
         tt(bge_nn1_n10, TBOOL);
         tt(bge_n23_n23, TBOOL);
+    }
+
+    ts("If simple");
+    {
+        IF(if10, bt, n10, nn1);
+        IF(ifnn1, bf, n10, nn1);
+        t(if10, 10);
+        t(ifnn1, -1);
+    }
+
+    ts("If complicated");
+    {
+        GE(n10, nn1); // true
+        GE(nn1, n10); // false
+        IF(if10, bge_n10_nn1, n10, nn1); // n10
+        IF(ifnn1, bge_nn1_n10, n10, nn1); // nn1
+        t(if10, 10);
+        t(ifnn1, -1);
+
     }
 }
 

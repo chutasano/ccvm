@@ -125,6 +125,22 @@ x0::P P::assign()
             }
             ins.push_back(new x0::IRet(this->t));
         }
+        else if (typeid(*iptr) == typeid(IIf))
+        {
+            auto i = static_cast<IIf*>(iptr);
+            for (I* li : i->ifi)
+            {
+                ins.push_back(li->assign());
+            }
+            for (I* li : i->elsei)
+            {
+                ins.push_back(li->assign());
+            }
+            for (I* li : i->theni)
+            {
+                ins.push_back(li->assign());
+            }
+        }
         else
         {
             ins.push_back(iptr->assign());

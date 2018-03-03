@@ -83,7 +83,7 @@ string ISrcSrc::to_asm()
 
 string ICall::to_asm()
 {
-    return "CALLQ\t" + this->label;
+    return i2string(this->instr) + string("\t") + this->label;
 }
 
 string IRet::to_asm()
