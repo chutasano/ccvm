@@ -52,7 +52,7 @@ namespace x0s
     // base class for X0 instructions
     struct I
     {
-        virtual x0::I* assign() = 0;
+        virtual std::list<x0::I*> assign() = 0;
         virtual std::list<std::string> get_vars() = 0;
     };
 
@@ -60,7 +60,7 @@ namespace x0s
     {
         INoArg(no_arg_instr i) : instr(i) { }
         no_arg_instr instr;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 
@@ -69,7 +69,7 @@ namespace x0s
         ISrc(src_instr i, Arg* s) : instr(i), src(s) { }
         src_instr instr;
         Arg* src;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 
@@ -78,7 +78,7 @@ namespace x0s
         IDst(dst_instr i, Dst* d) : instr(i), dst(d) { }
         dst_instr instr;
         Dst* dst;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 
@@ -88,7 +88,7 @@ namespace x0s
         src_dst_instr instr;
         Arg* src;
         Dst* dst;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 
@@ -98,7 +98,7 @@ namespace x0s
         src_src_instr instr;
         Arg* src;
         Arg* src2;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 
@@ -110,7 +110,7 @@ namespace x0s
         std::list<I*> ifi;
         std::list<I*> theni;
         std::list<I*> elsei;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 
@@ -119,7 +119,7 @@ namespace x0s
         ICall(call_instr ca, std::string l) : instr(ca), label(l) { }
         call_instr instr;
         std::string label;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 
@@ -127,14 +127,14 @@ namespace x0s
     {
         ILabel(std::string n) : name(n) { }
         std::string name;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
     struct IRet : I
     {
         IRet(Arg* a) : arg(a) { }
         Arg* arg;
-        x0::I* assign();
+        std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };
 

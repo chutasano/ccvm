@@ -30,7 +30,8 @@
 #define X0_SRC_SRC 
 
 #define X0_CALL \
-    ES(CALLQ)    \
+    ES(CALLQ)   \
+    ES(JMP)     \
     ES(JE)      \
     ES(JL)      \
     ES(JG)      \

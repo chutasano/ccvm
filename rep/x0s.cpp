@@ -125,25 +125,9 @@ x0::P P::assign()
             }
             ins.push_back(new x0::IRet(this->t));
         }
-        else if (typeid(*iptr) == typeid(IIf))
-        {
-            auto i = static_cast<IIf*>(iptr);
-            for (I* li : i->ifi)
-            {
-                ins.push_back(li->assign());
-            }
-            for (I* li : i->elsei)
-            {
-                ins.push_back(li->assign());
-            }
-            for (I* li : i->theni)
-            {
-                ins.push_back(li->assign());
-            }
-        }
         else
         {
-            ins.push_back(iptr->assign());
+            ins.splice(ins.end(), iptr->assign());
         }
     }
     return x0::P(ins);
@@ -174,53 +158,65 @@ x0::Arg* Var::assign()
 
 x0::Arg* Con::assign()
 {
-    return new x0::Con(this->val);
+    return { new x0::Con(this->val) };
 }
 
-x0::I* INoArg::assign()
+list<x0::I*> INoArg::assign()
 {
-    return new x0::INoArg(this->instr);
+    return { new x0::INoArg(this->instr) };
 }
 
-x0::I* ISrc::assign()
+list<x0::I*> ISrc::assign()
 {
-    return new x0::ISrc(this->instr, this->src->assign());
+    return { new x0::ISrc(this->instr, this->src->assign())};
 }
-x0::I* IDst::assign()
+list<x0::I*> IDst::assign()
 {
     x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign());
-    return new x0::IDst(this->instr, d);
+    return { new x0::IDst(this->instr, d) };
 }
-x0::I* ISrcDst::assign()
+list<x0::I*> ISrcDst::assign()
 {
     x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign());
-    return new x0::ISrcDst(this->instr, this->src->assign(), d);
+    return { new x0::ISrcDst(this->instr, this->src->assign(), d) };
 }
-x0::I* ISrcSrc::assign()
+list<x0::I*> ISrcSrc::assign()
 {
-    return new x0::ISrcSrc(this->instr, this->src->assign(), this->src2->assign());
+    return { new x0::ISrcSrc(this->instr, this->src->assign(), this->src2->assign()) };
 }
 
-x0::I* IIf::assign()
+list<x0::I*> IIf::assign()
 {
-    // TODO
-    return new x0::ILabel("woof");
+    list<x0::I*> ins;
+    for (I* i : ifi)
+    {
+        ins.splice(ins.end(), i->assign());
+    }
+    for (I* i : elsei)
+    {
+        ins.splice(ins.end(), i->assign());
+    }
+    for (I* i : theni)
+    {
+        ins.splice(ins.end(), i->assign());
+    }
+    return ins;
 }
 
-x0::I* ICall::assign()
+list<x0::I*> ICall::assign()
 {
-    return new x0::ICall(this->instr, this->label);
+    return { new x0::ICall(this->instr, this->label) };
 }
 
-x0::I* ILabel::assign()
+list<x0::I*> ILabel::assign()
 {
-    return new x0::ILabel(this->name);
+    return { new x0::ILabel(this->name) };
 }
 
-x0::I* IRet::assign()
+list<x0::I*> IRet::assign()
 {
     // TODO fix
-    return new x0::IRet(TBOOL);
+    return { new x0::IRet(TBOOL) };
 }
 
 list<string> INoArg::get_vars()

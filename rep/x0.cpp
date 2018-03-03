@@ -116,8 +116,6 @@ void P::fix()
     // can't ++it in the for loop because erase will advance iterator
     for (auto it = begin(this->instr); it != end(this->instr);)
     {
-        // I think it's okay to do a little hack here; only ISrcDst needs fixing
-        // so I'd need a bunch of stubs if I were to do it OO
         if (typeid(**it) == typeid(ISrcDst))
         {
             auto i = static_cast<ISrcDst*>(*it);
@@ -130,8 +128,15 @@ void P::fix()
             }
             else
             {
+                if (i->instr == MOVZBQ &&
+                        typeid(*(i->dst)) == typeid(Mem))
+                {
+                    Dst* local_dst = i->dst;
+                    i->dst = new Reg("rax");
+                    it = this->instr.insert(++it, new ISrcDst(MOVQ, i->dst, local_dst));
+                }
                 // we need to fix two args both being memory references
-                if (typeid(*(i->src)) == typeid(Mem) &&
+                else if (typeid(*(i->src)) == typeid(Mem) &&
                         typeid(*(i->dst)) == typeid(Mem))
                 {
                     ISrcDst* movq = new ISrcDst(MOVQ, i->src, new Reg("rax"));

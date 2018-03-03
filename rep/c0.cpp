@@ -93,7 +93,7 @@ list<x0s::I*> S::select()
 
 list<x0s::I*> If::select()
 {
-    x0s::Dst* var = new x0s::Reg("Rax"); // TODO?
+    x0s::Dst* var = new x0s::Reg("rax"); // TODO?
     x0s::Var* tv = new x0s::Var(this->v);
     list<x0s::I*> l = {
         new x0s::ISrcDst(MOVQ, this->conde->l->to_arg(), var),
@@ -128,7 +128,7 @@ list<x0s::I*> If::select()
         elsei.splice(elsei.end(), is);
     }
     elsei.push_back(new x0s::ISrcDst(MOVQ, elsev->to_arg(), tv));
-    elsei.push_back(new x0s::ICall(CALLQ, donelabel));
+    elsei.push_back(new x0s::ICall(JMP, donelabel));
     elsei.push_back(new x0s::ILabel(thenlabel));
 
     list<x0s::I*> theni;
