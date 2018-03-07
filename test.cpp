@@ -112,6 +112,7 @@ static void ts(string name)
 static void t(r0::E* e, int expect)
 {
     r0::P p(e);
+    p.desugar();
     if (testfunc(p, expect))
     {
         cout << "  Test passed\n";
@@ -356,6 +357,16 @@ void test_all()
         t(if10, 10);
         t(ifnn1, -1);
 
+    }
+
+    ts("Begin");
+    {
+        NUM(123);
+        NUM(234);
+        NUM(345);
+        NUM(456);
+        UPTR(r0::Begin, beg, {n123, n234, n345, n456});
+        t(beg, 456);
     }
 }
 

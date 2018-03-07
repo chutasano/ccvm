@@ -20,6 +20,7 @@ namespace r0
         virtual c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const = 0;
         virtual E* clone() const = 0;
         virtual void deep_delete() = 0;
+        virtual E* desugar() = 0;
     };
 
     struct P
@@ -32,6 +33,7 @@ namespace r0
         void uniquify();
         type type_check() const;
         c0::P flatten() const;
+        void desugar();
     };
 
     struct Num : E
@@ -44,6 +46,7 @@ namespace r0
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Num* clone() const;
         void deep_delete() { }
+        E* desugar() { return this; }
     };
 
     struct Bool : E
@@ -56,6 +59,7 @@ namespace r0
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Bool* clone() const;
         void deep_delete() { }
+        E* desugar() { return this; }
     };
 
     struct Read : E
@@ -67,6 +71,7 @@ namespace r0
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Read* clone() const;
         void deep_delete() { }
+        E* desugar() { return this; }
     };
 
     struct Binop : E
@@ -80,7 +85,8 @@ namespace r0
         type t_check(std::unordered_map<std::string , type>) const;
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Binop* clone() const;
-        void deep_delete() { this->l->deep_delete(); this->r->deep_delete(); delete this->l; delete this->r; }
+        void deep_delete() { l->deep_delete(); r->deep_delete(); delete l; delete r; }
+        E* desugar() { l = l->desugar(); r = r->desugar(); return this; }
     };
 
     struct Unop : E
@@ -93,7 +99,8 @@ namespace r0
         type t_check(std::unordered_map<std::string , type>) const;
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Unop* clone() const;
-        void deep_delete() { this->v->deep_delete(); delete this->v; }
+        void deep_delete() { v->deep_delete(); delete v; }
+        E* desugar() { v = v->desugar(); return this; }
     };
 
     struct Var : E
@@ -106,6 +113,7 @@ namespace r0
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Var* clone() const;
         void deep_delete() { }
+        E* desugar() { return this; }
     };
 
     struct Let : E
@@ -119,7 +127,8 @@ namespace r0
         type t_check(std::unordered_map<std::string , type>) const;
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Let* clone() const;
-        void deep_delete() { this->ve->deep_delete(); this->be->deep_delete(); delete this->ve; delete this->be; }
+        void deep_delete() { ve->deep_delete(); be->deep_delete(); delete ve; delete be; }
+        E* desugar() { ve = ve->desugar(); be = be->desugar(); return this; }
     };
 
     struct If : E
@@ -133,8 +142,27 @@ namespace r0
         type t_check(std::unordered_map<std::string, type>) const;
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         If* clone() const;
-        void deep_delete() { this->conde->deep_delete(); this->thene->deep_delete(); this->elsee->deep_delete();
-            delete this->conde; delete this->thene; delete this->elsee; }
+        void deep_delete() { conde->deep_delete(); thene->deep_delete(); elsee->deep_delete();
+            delete conde; delete thene; delete elsee; }
+        E* desugar() { conde = conde->desugar(); thene = thene->desugar(); elsee = elsee->desugar(); return this;}
+    };
+
+    /********* Below are syntactic sugars *********/
+    struct Sugar : E
+    {
+        std::vector<E*> get_childs();
+        void uniquify(std::unordered_map<std::string, std::string>);
+        type t_check(std::unordered_map<std::string, type>) const;
+        c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
+    };
+
+    struct Begin : Sugar
+    {
+        Begin(std::list<E*> exps) : elist(exps) { }
+        std::list<E*> elist;
+        Begin* clone() const;
+        void deep_delete();
+        E* desugar();
     };
 }
 

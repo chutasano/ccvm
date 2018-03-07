@@ -1,5 +1,8 @@
 text + parser ->
 ---
+
+r0s + de-sugar ->
+
 r0 + uniquify ->
 "r1" (actually contained in r0 data structure) + flatten ->
 

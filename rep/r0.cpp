@@ -24,6 +24,7 @@ using namespace r0;
 //'[v]ar
 //'[l]et
 //'[i]f
+//'[s]ugar
 
 
 string gensym(string sym, bool reset = false)
@@ -108,6 +109,11 @@ type P::type_check() const
     return this->e->t_check(vars);
 }
 
+void P::desugar()
+{
+    e = e->desugar();
+}
+
 Num* Num::clone() const
 {
     return new Num(this->value);
@@ -170,7 +176,6 @@ type Read::t_check(unordered_map<string, type> vmap) const
 {
     return TNUM;
 }
-
 
 Binop* Binop::clone() const
 {
@@ -412,4 +417,56 @@ type If::t_check(unordered_map<string, type> vmap) const
     }
 }
 
+vector<E*> Sugar::get_childs()
+{
+    cerr << "Call desugar before using any r0->c0 functionality\n";
+    exit(10);
+}
 
+void Sugar::uniquify(unordered_map<string, string> a)
+{
+    cerr << "Call desugar before using any r0->c0 functionality\n";
+    exit(10);
+}
+
+type Sugar::t_check(unordered_map<string, type> a) const
+{
+    cerr << "Call desugar before using any r0->c0 functionality\n";
+    exit(10);
+}
+
+c0::Arg* Sugar::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+{
+    cerr << "Call desugar before using any r0->c0 functionality\n";
+    exit(10);
+}
+
+Begin* Begin::clone() const
+{
+    list<E*> newlist;
+    for (E* e : elist)
+    {
+        newlist.push_back(e->clone());
+    }
+    return new Begin(newlist);
+}
+
+void Begin::deep_delete()
+{
+    for (E* e : elist)
+    {
+        e->deep_delete();
+        delete e;
+    }
+}
+
+E* Begin::desugar()
+{
+    auto i = elist.rbegin();
+    E* curr = *i;
+    for (++i; i != elist.rend(); ++i)
+    {
+        curr = new Let(gensym("unusedvar"), *i, curr);
+    }
+    return curr;
+}
