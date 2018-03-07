@@ -203,9 +203,32 @@ list<x0::I*> IIf::assign()
     return ins;
 }
 
+list<x0::I*> IJmp::assign()
+{
+    return { new x0::IJmp(this->instr, this->label) };
+}
+
 list<x0::I*> ICall::assign()
 {
-    return { new x0::ICall(this->instr, this->label) };
+    static const list<string> available_regs = 
+    {
+        "rdi", "rsi", "rdx", "rcx", "r8", "r9"
+    };
+    if (args.size() > 6)
+    {
+        cerr << "ERROR: more than 6 args for function not supported atm.\n";
+        exit(1);
+    }
+    list<x0::I*> a;
+    for(auto it_pair = make_pair(args.begin(), available_regs.begin());
+            it_pair.first != args.end();
+            ++it_pair.first, ++it_pair.second)
+    {
+        a.push_back(new x0::ISrcDst(MOVQ, (*it_pair.first)->assign(), new x0::Reg(*it_pair.second)));
+    }
+    a.push_back(new x0::ICall(this->label));
+    a.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rax"), static_cast<x0::Dst*>(dst->assign())));
+    return a;
 }
 
 list<x0::I*> ILabel::assign()
@@ -295,6 +318,11 @@ list<string> IIf::get_vars()
 }
 
 list<string> ICall::get_vars()
+{
+    return { dst->var };
+}
+
+list<string> IJmp::get_vars()
 {
     return { };
 }

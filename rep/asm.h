@@ -29,8 +29,7 @@
 
 #define X0_SRC_SRC 
 
-#define X0_CALL \
-    ES(CALLQ)   \
+#define X0_JMP \
     ES(JMP)     \
     ES(JE)      \
     ES(JL)      \
@@ -68,10 +67,10 @@ enum src_src_instr
         SRC_SRC_COUNT
 };
 
-enum call_instr
+enum jmp_instr
 {
-    X0_CALL
-        CALL_COUNT
+    X0_JMP
+        JMP_COUNT
 };
 
 #undef ES
@@ -108,10 +107,10 @@ static inline const char * const i2string(src_src_instr id)
         X0_SRC_SRC
     }[id];
 }
-static inline const char * const i2string(call_instr id)
+static inline const char * const i2string(jmp_instr id)
 {
     return (const char *[]) {
-        X0_CALL
+        X0_JMP
     }[id];
 }
 

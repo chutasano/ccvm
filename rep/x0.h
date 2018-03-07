@@ -103,10 +103,17 @@ namespace x0
         std::string to_asm();
     };
 
+    struct IJmp : I
+    {
+        IJmp(jmp_instr ca, std::string l) : instr(ca), label(l) { }
+        jmp_instr instr;
+        std::string label;
+        std::string to_asm();
+    };
+
     struct ICall : I
     {
-        ICall(call_instr ca, std::string l) : instr(ca), label(l) { }
-        call_instr instr;
+        ICall(std::string l) : label(l) { }
         std::string label;
         std::string to_asm();
     };

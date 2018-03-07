@@ -13,13 +13,13 @@ namespace c0
     struct E
     {
         virtual ~E() { }
-        virtual std::list<x0s::I*> select(x0s::Dst*) = 0;
+        virtual std::list<x0s::I*> select(x0s::Var*) = 0;
     };
 
     struct Arg : E
     {
         virtual ~Arg() { }
-        std::list<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Var*);
         virtual x0s::Arg* to_arg() = 0;
     };
 
@@ -47,7 +47,7 @@ namespace c0
     struct Read : E
     {
         Read() { }
-        std::list<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Var*);
     };
 
     struct Binop : E
@@ -56,7 +56,7 @@ namespace c0
         b_ops op;
         Arg* l;
         Arg* r;
-        std::list<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Var*);
     };
 
     struct Unop : E
@@ -64,7 +64,7 @@ namespace c0
         Unop(u_ops oper, Arg* value) : op(oper), v(value) { }
         u_ops op;
         Arg* v;
-        std::list<x0s::I*> select(x0s::Dst*);
+        std::list<x0s::I*> select(x0s::Var*);
     };
 
     //stmt

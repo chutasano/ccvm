@@ -114,11 +114,22 @@ namespace x0s
         std::list<std::string> get_vars();
     };
 
+    struct IJmp : I
+    {
+        IJmp(jmp_instr ca, std::string l) : instr(ca), label(l) { }
+        jmp_instr instr;
+        std::string label;
+        std::list<x0::I*> assign();
+        std::list<std::string> get_vars();
+    };
+
+    // abstraction of function calls
     struct ICall : I
     {
-        ICall(call_instr ca, std::string l) : instr(ca), label(l) { }
-        call_instr instr;
+        ICall(std::string l, std::list<Arg*> args, Var* dst) : label(l), args(args), dst(dst) { }
         std::string label;
+        std::list<Arg*> args;
+        Var* dst;
         std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };

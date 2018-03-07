@@ -81,9 +81,14 @@ string ISrcSrc::to_asm()
     return i2string(this->instr) + string("\t") + this->src->to_string() + ", " + this->src2->to_string();
 }
 
-string ICall::to_asm()
+string IJmp::to_asm()
 {
     return i2string(this->instr) + string("\t") + this->label;
+}
+
+string ICall::to_asm()
+{
+    return "CALLQ\t" + this->label;
 }
 
 string IRet::to_asm()

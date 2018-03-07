@@ -20,18 +20,17 @@ x0s::Arg* Num::to_arg()
     return new x0s::Con(this->value);
 }
 
-list<x0s::I*> Arg::select(x0s::Dst* var)
+list<x0s::I*> Arg::select(x0s::Var* var)
 {
     return { new x0s::ISrcDst(MOVQ, this->to_arg(), var) };
 }
 
-list<x0s::I*> Read::select(x0s::Dst* var)
+list<x0s::I*> Read::select(x0s::Var* var)
 {
-    return { new x0s::ICall(CALLQ, "_lang_read_num"),
-             new x0s::ISrcDst(MOVQ, new x0s::Reg("rax"), var) };
+    return { new x0s::ICall("_lang_read_num", { }, var) };
 }
 
-list<x0s::I*> Binop::select(x0s::Dst* var)
+list<x0s::I*> Binop::select(x0s::Var* var)
 {
     switch(this->op)
     {
@@ -69,7 +68,7 @@ list<x0s::I*> Binop::select(x0s::Dst* var)
     }
 }
 
-list<x0s::I*> Unop::select(x0s::Dst* var)
+list<x0s::I*> Unop::select(x0s::Var* var)
 {
     switch(this->op)
     {
@@ -103,19 +102,19 @@ list<x0s::I*> If::select()
     switch(this->conde->op)
     {
         case B_EQ:
-            l.push_back(new x0s::ICall(JE, thenlabel));
+            l.push_back(new x0s::IJmp(JE, thenlabel));
             break;
         case B_LT:
-            l.push_back(new x0s::ICall(JL, thenlabel));
+            l.push_back(new x0s::IJmp(JL, thenlabel));
             break;
         case B_GT:
-            l.push_back(new x0s::ICall(JG, thenlabel));
+            l.push_back(new x0s::IJmp(JG, thenlabel));
             break;
         case B_LE:
-            l.push_back(new x0s::ICall(JLE, thenlabel));
+            l.push_back(new x0s::IJmp(JLE, thenlabel));
             break;
         case B_GE:
-            l.push_back(new x0s::ICall(JGE, thenlabel));
+            l.push_back(new x0s::IJmp(JGE, thenlabel));
             break;
         default:
             std::cout << "\tc0If: WARN: unknown binary operator: " << this->conde->op << "\n";
@@ -128,7 +127,7 @@ list<x0s::I*> If::select()
         elsei.splice(elsei.end(), is);
     }
     elsei.push_back(new x0s::ISrcDst(MOVQ, elsev->to_arg(), tv));
-    elsei.push_back(new x0s::ICall(JMP, donelabel));
+    elsei.push_back(new x0s::IJmp(JMP, donelabel));
     elsei.push_back(new x0s::ILabel(thenlabel));
 
     list<x0s::I*> theni;
