@@ -2,6 +2,7 @@
 
 #include <list>
 #include <string>
+#include <unordered_map>
 
 #include "asm.h"
 #include "x0.h"
@@ -152,10 +153,10 @@ namespace x0s
     // program container for X0
     struct P
     {
-        P(std::list<I*> i, std::unordered_map<std::string, type> v, type t) : instr(i), vars(v), t(t) { }
+        P(std::list<I*> i, std::unordered_map<std::string, int> v, int t) : instr(i), vars(v), t(t) { }
         std::list<I*> instr;
-        std::unordered_map<std::string, type> vars;
-        type t;
+        std::unordered_map<std::string, int> vars;
+        int t;
         x0::P assign();
         private:
         void interference();

@@ -107,7 +107,8 @@ string IRet::to_asm()
     // in automated tests
     stringstream ss;
     ss << "MOVQ\t%rax, %rdi\n";
-    switch (this->t)
+    type ty = static_cast<type>(t);
+    switch (ty)
     {
         case TNUM:
             ss << "    CALLQ\t_lang_print_num\n";

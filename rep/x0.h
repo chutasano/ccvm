@@ -120,17 +120,17 @@ namespace x0
 
     struct IRet : I
     {
-        IRet(type ty) : t(ty) {  }
-        type t;
+        IRet(int ty) : t(ty) {  }
+        int t;
         std::string to_asm();
     };
 
     struct Tag
     {
-        Tag(std::string name, std::list<type> vals) : name(name), vals(vals) { }
-        Tag(std::string name, type val) : name(name), vals({val}) { }
+        Tag(std::string name, std::vector<int> vals) : name(name), vals(vals) { }
+        Tag(std::string name, int val) : name(name), vals({val}) { }
         std::string name;
-        std::list<type> vals;
+        std::vector<int> vals;
         std::string to_asm();
     };
 

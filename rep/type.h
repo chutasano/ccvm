@@ -1,7 +1,7 @@
 #pragma once
 
-#include <list>
-#include <unordered_map>
+#include <map>
+#include <vector>
 
 enum type
 {
@@ -16,7 +16,7 @@ enum type
 
 // global should be made in r0 and populated during the type checking phase
 // map from type (TVEC + n) to list of types
-extern std::unordered_map<type, std::list<type>, std::hash<int> > vec_type;
+extern std::map<int, std::vector<int> > vec_type;
 
 enum tbool
 {

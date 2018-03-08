@@ -162,8 +162,8 @@ static void tt(r0::E* e, type expect)
 {
     r0::P p(e);
     p.type_check();
-    type ty = p.t;
-    if (ty == expect)
+    int ty = p.t;
+    if (ty == static_cast<int>(expect))
     {
         cout << "  Test passed: type check\n";
     }

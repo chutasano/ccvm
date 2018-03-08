@@ -24,9 +24,10 @@ using namespace r0;
 //'[v]ar
 //'[l]et
 //'[i]f
+//'[z] vector -- zvector?????????????
 //'[s]ugar
 
-unordered_map<type, list<type>, hash<int> > vec_type;
+map<int, vector<int> > vec_type;
 
 string gensym(string sym, bool reset = false)
 {
@@ -92,7 +93,7 @@ bool P::is_unique() const
 
 c0::P P::flatten() const
 {
-    unordered_map<string, type> vars;
+    unordered_map<string, int> vars;
     vector<c0::AS*> stmts;
     c0::Arg* a = e->to_c0(vars, stmts);
     if (t == TERROR)
@@ -105,7 +106,8 @@ c0::P P::flatten() const
 
 void P::type_check()
 {
-    unordered_map<string, type> vars;
+    vec_type.clear();
+    unordered_map<string, int> vars;
     t = e->t_check(vars);
 }
 
@@ -124,12 +126,12 @@ void Num::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Num::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Num::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
      return new c0::Num(this->value);
 }
 
-type Num::t_check(unordered_map<string, type> vmap)
+int Num::t_check(unordered_map<string, int> vmap)
 {
     t = TNUM;
     return TNUM;
@@ -145,12 +147,12 @@ void Bool::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Bool::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Bool::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
      return new c0::Num(static_cast<int>(this->value));
 }
 
-type Bool::t_check(unordered_map<string, type> vmap)
+int Bool::t_check(unordered_map<string, int> vmap)
 {
     t = TBOOL;
     return TBOOL;
@@ -166,7 +168,7 @@ void Read::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Read::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Read::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0Read");
     vars[s] = t;
@@ -174,7 +176,7 @@ c0::Arg* Read::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) 
     return new c0::Var(s);
 }
 
-type Read::t_check(unordered_map<string, type> vmap)
+int Read::t_check(unordered_map<string, int> vmap)
 {
     t = TNUM;
     return TNUM;
@@ -191,7 +193,7 @@ void Binop::uniquify(unordered_map<string, string> m)
     this->r->uniquify(m);
 }
 
-c0::Arg* Binop::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Binop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0Binop");
     vars[s] = t;
@@ -201,12 +203,12 @@ c0::Arg* Binop::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts)
     return new c0::Var(s);
 }
 
-type Binop::t_check(unordered_map<string, type> vmap)
+int Binop::t_check(unordered_map<string, int> vmap)
 {
     if (t == TUNKNOWN)
     {
-        type lt = this->l->t_check(vmap);
-        type rt = this->r->t_check(vmap);
+        int lt = this->l->t_check(vmap);
+        int rt = this->r->t_check(vmap);
         if (lt == TERROR || rt == TERROR)
         {
             cerr << "Binop: args have unresolvable types\n";
@@ -259,7 +261,7 @@ void Unop::uniquify(unordered_map<string, string> m)
     this->v->uniquify(m);
 }
 
-c0::Arg* Unop::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Unop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0Unop");
     vars[s] = t;
@@ -267,11 +269,11 @@ c0::Arg* Unop::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) 
     return new c0::Var(s);
 }
 
-type Unop::t_check(unordered_map<string, type> vmap)
+int Unop::t_check(unordered_map<string, int> vmap)
 {
     if (t == TUNKNOWN)
     {
-        type vt = this->v->t_check(vmap);
+        int vt = this->v->t_check(vmap);
         if (vt == TERROR)
         {
             cerr << "Unop: child has unresolved type\n";
@@ -328,12 +330,12 @@ void Var::uniquify(unordered_map<string, string> m)
     }
 }
 
-c0::Arg* Var::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Var::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     return new c0::Var(this->name);
 }
 
-type Var::t_check(unordered_map<string, type> vmap)
+int Var::t_check(unordered_map<string, int> vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -361,14 +363,14 @@ void Let::uniquify(unordered_map<string, string> m)
     this->be->uniquify(m);
 }
 
-c0::Arg* Let::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Let::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     stmts.push_back(new c0::S(this->name, this->ve->to_c0(vars, stmts)));
     vars[this->name] = t;
     return this->be->to_c0(vars, stmts);
 }
 
-type Let::t_check(unordered_map<string, type> vmap)
+int Let::t_check(unordered_map<string, int> vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -390,7 +392,7 @@ void If::uniquify(unordered_map<string, string> m)
     elsee->uniquify(m);
 }
 
-c0::Arg* If::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* If::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0If");
     vars[s] = t;
@@ -416,7 +418,7 @@ c0::Arg* If::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) co
     return new c0::Var(s);
 }
 
-type If::t_check(unordered_map<string, type> vmap)
+int If::t_check(unordered_map<string, int> vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -425,8 +427,8 @@ type If::t_check(unordered_map<string, type> vmap)
             cerr << "If: cond expression does not have type bool\n";
             t = TERROR;
         }
-        type thent = thene->t_check(vmap);
-        type elset = elsee->t_check(vmap);
+        int thent = thene->t_check(vmap);
+        int elset = elsee->t_check(vmap);
         if (thent == elset)
         {
             t = thent; // if both are TERROR, we'll catch it from the ret anyway
@@ -440,7 +442,125 @@ type If::t_check(unordered_map<string, type> vmap)
     return t;
 }
 
-vector<E*> Sugar::get_childs()
+Vector* Vector::clone() const
+{
+    list<E*> ecopy;
+    for (E* e : elist)
+    {
+        ecopy.push_back(e->clone());
+    }
+    return new Vector(ecopy);
+}
+
+void Vector::deep_delete()
+{
+    for (E* e : elist)
+    {
+        e->deep_delete();
+        delete e;
+    }
+}
+
+void Vector::uniquify(unordered_map<string, string> m)
+{
+    for (E* e : elist)
+    {
+        e->uniquify(m);
+    }
+}
+
+c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+{
+    // TODO
+    return new c0::Var("woof");
+    //return new c0::Vector(this->name);
+}
+
+int Vector::t_check(unordered_map<string, int> vmap)
+{
+    if (t == TUNKNOWN)
+    {
+        vector<int> types;
+        types.reserve(elist.size());
+        for (E* e : elist)
+        {
+            types.push_back(e->t_check(vmap));
+        }
+        // expensive... oh well maybe optimize todo?
+        auto it = vec_type.begin();
+        for (; it != vec_type.end(); ++it)
+        {
+            // no need to worry about checking for nested vectors because
+            // the above for loop should take care of that and prevent
+            // duplicate definition from occuring
+            if (it->second == types)
+            {
+                t = it->first;
+                break;
+            }
+        }
+        if (it == vec_type.end())
+        {
+            // make new entry in vec_type
+            int next_index = (--it)->first + 1;
+            vec_type[next_index] = types;
+            t = next_index;
+        }
+    }
+    return t;
+}
+
+E* Vector::desugar()
+{
+    for (E* e : elist)
+    {
+        e = e->desugar();
+    }
+    return this;
+}
+
+int VectorRef::t_check(unordered_map<string, int> vmap)
+{
+    if (t == TUNKNOWN)
+    {
+        int t_vec = vec->t_check(vmap);
+        vector<int> types = vec_type[t_vec];
+        t = types[index];
+    }
+    return t;
+}
+
+c0::Arg* VectorRef::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+{
+    return new c0::Var("woof");
+    // todo
+}
+
+int VectorSet::t_check(unordered_map<string, int> vmap)
+{
+    if (t == TUNKNOWN)
+    {
+        int t_vec = vec->t_check(vmap);
+        vector<int> types = vec_type[t_vec];
+        if(types[index] == asg->t_check(vmap))
+        {
+            t = types[index];
+        }
+        else
+        {
+            t = TERROR;
+        }
+    }
+    return t;
+}
+
+c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+{
+    return new c0::Var("woof");
+    // todo
+}
+
+list<E*> Sugar::get_childs()
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);
@@ -452,13 +572,13 @@ void Sugar::uniquify(unordered_map<string, string> a)
     exit(10);
 }
 
-type Sugar::t_check(unordered_map<string, type> a)
+int Sugar::t_check(unordered_map<string, int> a)
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);
 }
 
-c0::Arg* Sugar::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Sugar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);

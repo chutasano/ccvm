@@ -95,7 +95,7 @@ bool test_compile(const r0::P &p, int64_t expect)
 {
     r0::P cpy = r0::P(p);
     string output = compile_run(cpy);
-    type t = cpy.t;
+    type t = static_cast<type>(cpy.t);
     cpy.deep_delete();
     size_t pos = 0;
 #ifdef DEBUG
