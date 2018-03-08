@@ -33,9 +33,9 @@ x0::P P::assign()
 {
     Graph::NodeList in;
     // generate nodes
-    for (string s : vars)
+    for (auto s : vars)
     {
-        in.add_node(s);
+        in.add_node(s.first);
     }
     // get lifetime of all vars
     unordered_map<string, pair<int, int> > lifetime;
@@ -124,6 +124,8 @@ x0::P P::assign()
             {
                 ins.push_back(new x0::ISrcDst(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
             }
+            // can't use map to get type because simple programs may optimize
+            // the ret part such that it's returning a non-variable (ie: constant)
             ins.push_back(new x0::IRet(this->t));
         }
         else

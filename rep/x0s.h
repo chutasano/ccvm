@@ -152,9 +152,9 @@ namespace x0s
     // program container for X0
     struct P
     {
-        P(std::list<I*> i, std::vector<std::string> v, type ty) : instr(i), vars(v), t(ty) { }
+        P(std::list<I*> i, std::unordered_map<std::string, type> v, type t) : instr(i), vars(v), t(t) { }
         std::list<I*> instr;
-        std::vector<std::string> vars;
+        std::unordered_map<std::string, type> vars;
         type t;
         x0::P assign();
         private:

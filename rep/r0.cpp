@@ -92,7 +92,7 @@ bool P::is_unique() const
 
 c0::P P::flatten() const
 {
-    vector<string> vars;
+    unordered_map<string, type> vars;
     vector<c0::AS*> stmts;
     c0::Arg* a = e->to_c0(vars, stmts);
     if (t == TERROR)
@@ -124,7 +124,7 @@ void Num::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Num::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Num::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
      return new c0::Num(this->value);
 }
@@ -145,7 +145,7 @@ void Bool::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Bool::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Bool::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
      return new c0::Num(static_cast<int>(this->value));
 }
@@ -166,10 +166,10 @@ void Read::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Read::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Read::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0Read");
-    vars.push_back(s);
+    vars[s] = t;
     stmts.push_back(new c0::S(s, new c0::Read()));
     return new c0::Var(s);
 }
@@ -191,10 +191,10 @@ void Binop::uniquify(unordered_map<string, string> m)
     this->r->uniquify(m);
 }
 
-c0::Arg* Binop::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Binop::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0Binop");
-    vars.push_back(s);
+    vars[s] = t;
     stmts.push_back(new c0::S(s, new c0::Binop(this->op,
                     this->l->to_c0(vars, stmts),
                     this->r->to_c0(vars, stmts))));
@@ -259,10 +259,10 @@ void Unop::uniquify(unordered_map<string, string> m)
     this->v->uniquify(m);
 }
 
-c0::Arg* Unop::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Unop::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0Unop");
-    vars.push_back(s);
+    vars[s] = t;
     stmts.push_back(new c0::S(s, new c0::Unop(this->op, this->v->to_c0(vars, stmts))));
     return new c0::Var(s);
 }
@@ -328,7 +328,7 @@ void Var::uniquify(unordered_map<string, string> m)
     }
 }
 
-c0::Arg* Var::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Var::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
     return new c0::Var(this->name);
 }
@@ -361,10 +361,10 @@ void Let::uniquify(unordered_map<string, string> m)
     this->be->uniquify(m);
 }
 
-c0::Arg* Let::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Let::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
     stmts.push_back(new c0::S(this->name, this->ve->to_c0(vars, stmts)));
-    vars.push_back(this->name);
+    vars[this->name] = t;
     return this->be->to_c0(vars, stmts);
 }
 
@@ -390,10 +390,10 @@ void If::uniquify(unordered_map<string, string> m)
     elsee->uniquify(m);
 }
 
-c0::Arg* If::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* If::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
     string s = gensym("r0If");
-    vars.push_back(s);
+    vars[s] = t;
     c0::Binop* c0bin; // TODO fix optimization, will not optimize
                       // a Let(Binop()) case
     if (typeid(*conde) == typeid(Binop))
@@ -458,7 +458,7 @@ type Sugar::t_check(unordered_map<string, type> a)
     exit(10);
 }
 
-c0::Arg* Sugar::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Sugar::to_c0(unordered_map<string, type> &vars, vector<c0::AS*> &stmts) const
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);

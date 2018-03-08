@@ -91,8 +91,8 @@ namespace c0
 
     struct P
     {
-        P(std::vector<std::string> v, std::vector<AS*> s, Arg* a, type ty) : vars(v), stmts(s), arg(a), t(ty) { }
-        std::vector<std::string> vars;
+        P(std::unordered_map<std::string, type> v, std::vector<AS*> s, Arg* a, type ty) : vars(v), stmts(s), arg(a), t(ty) { }
+        std::unordered_map<std::string, type> vars;
         std::vector<AS*> stmts;
         Arg* arg; //ret
         type t;

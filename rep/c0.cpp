@@ -150,6 +150,6 @@ x0s::P P::select()
         instrs.splice(instrs.end(), is);
     }
     instrs.push_back(new x0s::IRet(this->arg->to_arg()));
-    return x0s::P(instrs, this->vars, this->t);
+    return x0s::P(instrs, vars, t);
 }
 
