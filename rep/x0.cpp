@@ -59,6 +59,11 @@ string Mem::to_string()
     }
 }
 
+string Global::to_string()
+{
+    return "$" + name;
+}
+
 string ILabel::to_asm()
 {
     return name + ":";

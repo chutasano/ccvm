@@ -194,6 +194,7 @@ namespace r0
         E* desugar() { vec = vec->desugar(); asg = asg->desugar(); return this; };
     };
 
+
     /********* Below are syntactic sugars *********/
     struct Sugar : E
     {

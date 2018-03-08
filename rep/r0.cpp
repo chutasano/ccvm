@@ -472,9 +472,18 @@ void Vector::uniquify(unordered_map<string, string> m)
 
 c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
-    // TODO
-    return new c0::Var("woof");
-    //return new c0::Vector(this->name);
+    string s = gensym("r0Vector");
+    vars[s] = t;
+    stmts.push_back(new c0::S(s, new c0::Alloc(1 + elist.size(), t)));
+    string schild = s + "Children";
+    vars[schild] = TNUM;
+    int i = 0;
+    for (E* e : elist)
+    {
+        stmts.push_back(new c0::S(schild, new c0::VecSet(new c0::Var(s), i, e->to_c0(vars, stmts))));
+        i++;
+    }
+    return new c0::Var(s);
 }
 
 int Vector::t_check(unordered_map<string, int> vmap)
@@ -532,8 +541,10 @@ int VectorRef::t_check(unordered_map<string, int> vmap)
 
 c0::Arg* VectorRef::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
-    return new c0::Var("woof");
-    // todo
+    string s = gensym("r0VecRef");
+    vars[s] = t;
+    stmts.push_back(new c0::S(s, new c0::VecRef(static_cast<c0::Var*>(vec->to_c0(vars, stmts)), index)));
+    return new c0::Var(s);
 }
 
 int VectorSet::t_check(unordered_map<string, int> vmap)
@@ -556,8 +567,11 @@ int VectorSet::t_check(unordered_map<string, int> vmap)
 
 c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
-    return new c0::Var("woof");
-    // todo
+    string s = gensym("r0VecSet");
+    vars[s] = t;
+    stmts.push_back(new c0::S(s,
+                new c0::VecSet(static_cast<c0::Var*>(vec->to_c0(vars, stmts)), index, asg->to_c0(vars, stmts))));
+    return new c0::Var(s);
 }
 
 list<E*> Sugar::get_childs()

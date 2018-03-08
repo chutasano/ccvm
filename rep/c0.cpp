@@ -84,6 +84,28 @@ list<x0s::I*> Unop::select(x0s::Var* var)
     }
 }
 
+list<x0s::I*> Alloc::select(x0s::Var* var)
+{
+    return { new x0s::ISrcDst(MOVQ, new x0s::Global(type2name(tag)), 
+                      new x0s::Deref(new x0s::Reg("r15"), 0)),
+             new x0s::ISrcDst(MOVQ, new x0s::Reg("r15"), var),
+             new x0s::ISrcDst(ADDQ, new x0s::Con(8*(1+size)), new x0s::Reg("r15")) };
+}
+
+list<x0s::I*> VecRef::select(x0s::Var* var)
+{
+    return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("rax")),
+             new x0s::ISrcDst(MOVQ, new x0s::Deref(new x0s::Reg("rax"), 8*(1+index)), var) };
+}
+
+list<x0s::I*> VecSet::select(x0s::Var* var)
+{
+    return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("rax")),
+             new x0s::ISrcDst(MOVQ, asg->to_arg(),
+                      new x0s::Deref(new x0s::Reg("rax"), 8*(1+index))),
+             new x0s::ISrcDst(MOVQ, new x0s::Con(TV_VOID), var) };
+}
+
 list<x0s::I*> S::select()
 {
     return this->e->select(new x0s::Var(this->v));
@@ -144,6 +166,8 @@ list<x0s::I*> If::select()
 x0s::P P::select()
 {
     list<x0s::I*> instrs;
+    instrs.push_back(new x0s::ICall("_lang_init_heap", { new x0s::Con(512) }, 
+                                     new x0s::Reg("r15")));
     for (auto s : this->stmts)
     {
         list<x0s::I*> is = s->select();

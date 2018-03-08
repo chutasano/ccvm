@@ -49,6 +49,14 @@ namespace x0
         std::string to_string();
     };
 
+    struct Global : Dst
+    {
+        Global(std::string s) : name(s) { }
+        std::string name;
+        std::string to_string();
+    };
+
+
     // base class for X0 instructions
     struct I
     {

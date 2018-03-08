@@ -37,6 +37,13 @@ namespace c0
         x0s::Arg* to_arg();
     };
 
+    struct Global : Arg
+    {
+        Global(std::string varname) : name(varname) { }
+        std::string name;
+        x0s::Arg* to_arg();
+    };
+
     // abstract statement either contains an if or a statement
     struct AS
     {
@@ -67,6 +74,31 @@ namespace c0
         std::list<x0s::I*> select(x0s::Var*);
     };
 
+    struct Alloc : E
+    {
+        Alloc(int size, int tag) : size(size), tag(tag) { }
+        int size;
+        int tag;
+        std::list<x0s::I*> select(x0s::Var*);
+    };
+
+    struct VecRef : E
+    {
+        VecRef(Var* vec, int index) : vec(vec), index(index) { }
+        Var* vec;
+        int index;
+        std::list<x0s::I*> select(x0s::Var*);
+    };
+
+    struct VecSet : E
+    {
+        VecSet(Var* vec, int index, Arg* asg) : vec(vec), index(index), asg(asg) { }
+        Var* vec;
+        int index;
+        Arg* asg;
+        std::list<x0s::I*> select(x0s::Var*);
+    };
+
     //stmt
     struct S : AS
     {
@@ -88,6 +120,7 @@ namespace c0
         Arg* elsev;
         std::list<x0s::I*> select();
     };
+
 
     struct P
     {

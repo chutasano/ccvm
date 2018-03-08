@@ -29,3 +29,26 @@ enum tvoid
     TV_VOID = 0
 };
 
+static inline std::string type2name(int n)
+{
+    switch(n)
+    {
+        case TNUM:
+            return "_LANG_NUM_T";
+        case TBOOL:
+            return "_LANG_BOOL_T";
+        case TVOID:
+            return "_LANG_VOID_T";
+        case TVEC:
+            return "_LANG_VEC_T";
+        default:
+            if (n == TERROR || n == TUNKNOWN)
+            {
+                return "WTF_WRONG_TYPE";
+            }
+            else
+            {
+                return "_LANG_VEC_T_" + std::to_string(n - TVEC);
+            }
+    }
+}

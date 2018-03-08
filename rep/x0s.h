@@ -43,13 +43,28 @@ namespace x0s
         x0::Arg* assign();
     };
 
+    struct Deref : Dst
+    {
+        Deref(Reg* r, int offset) : reg(r), offset(offset) { }
+        Reg* reg;
+        int offset;
+        x0::Arg* assign();
+    };
+
+    struct Global : Dst
+    {
+        Global(std::string s) : name(s) { }
+        std::string name;
+        x0::Arg* assign();
+    };
+
+
     struct Con : Arg
     {
         Con(int64_t c) : val(c) { }
         int64_t val;
         x0::Arg* assign();
     };
-
     // base class for X0 instructions
     struct I
     {
@@ -127,10 +142,10 @@ namespace x0s
     // abstraction of function calls
     struct ICall : I
     {
-        ICall(std::string l, std::list<Arg*> args, Var* dst) : label(l), args(args), dst(dst) { }
+        ICall(std::string l, std::list<Arg*> args, Dst* dst) : label(l), args(args), dst(dst) { }
         std::string label;
         std::list<Arg*> args;
-        Var* dst;
+        Dst* dst;
         std::list<x0::I*> assign();
         std::list<std::string> get_vars();
     };

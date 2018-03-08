@@ -76,7 +76,8 @@ void _lang_print_void(int64_t num)
 // va_args should go:
 //   type identifier
 //   value
-void* _lang_init_heap(int64_t heap_size, int64_t root_stack_size)
+void* _lang_init_heap(int64_t heap_size)
+//, int64_t root_stack_size)
 {
     // init heap
     pagesize = sysconf(_SC_PAGE_SIZE);
@@ -94,7 +95,7 @@ void* _lang_init_heap(int64_t heap_size, int64_t root_stack_size)
     from = buf+2*pagesize - heap_size;
     to = buf+4*pagesize - heap_size;
     mprotect(from, pagesize, PROT_READ | PROT_WRITE);
-    return malloc(sizeof(void*)*root_stack_size);
+    return from;
 }
 
 //void collect(void* root_stack_ptr, )

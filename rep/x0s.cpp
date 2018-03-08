@@ -25,7 +25,6 @@ static const vector<string> regs
     "r12",
     "r13",
     "r14",
-    "r15"
 };
 
 const assign_mode a_mode = ASG_SMART;
@@ -135,14 +134,17 @@ x0::P P::assign()
         }
     }
     list<x0::Tag> tags;
-    tags.push_back(x0::Tag("_LANG_NUM_T", TNUM));
-    tags.push_back(x0::Tag("_LANG_BOOL_T", TBOOL));
-    tags.push_back(x0::Tag("_LANG_VOID_T", TVOID));
-    tags.push_back(x0::Tag("_LANG_VEC_T", TVEC));
+    tags.push_back(x0::Tag(type2name(TNUM), TNUM));
+    tags.push_back(x0::Tag(type2name(TBOOL), TBOOL));
+    tags.push_back(x0::Tag(type2name(TVOID), TVOID));
+    tags.push_back(x0::Tag(type2name(TVEC), TVEC));
     // type -> list of types (for vectors)
+    vec_type.erase(vec_type.begin());
     for (auto vpair : vec_type)
     {
-        tags.push_back(x0::Tag("_LANG_VEC_T_" + to_string(vpair.first - TVEC), vpair.second));
+        auto v = vpair.second;
+        v.insert(v.begin(), v.size());
+        tags.push_back(x0::Tag(type2name(vpair.first), v));
     }
     return x0::P(ins, tags);
 }
@@ -170,9 +172,19 @@ x0::Arg* Var::assign()
     }
 }
 
+x0::Arg* Deref::assign()
+{
+    return new x0::Mem(reg->name, offset);
+}
+
+x0::Arg* Global::assign()
+{
+    return new x0::Global(name) ;
+}
+
 x0::Arg* Con::assign()
 {
-    return { new x0::Con(this->val) };
+    return new x0::Con(this->val);
 }
 
 list<x0::I*> INoArg::assign()
@@ -333,7 +345,14 @@ list<string> IIf::get_vars()
 
 list<string> ICall::get_vars()
 {
-    return { dst->var };
+    if (typeid(dst) == typeid(Var*))
+    {
+        return { static_cast<Var*>(dst)->var };
+    }
+    else
+    {
+        return { };
+    }
 }
 
 list<string> IJmp::get_vars()
