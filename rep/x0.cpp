@@ -116,6 +116,9 @@ string IRet::to_asm()
         case TBOOL:
             ss << "    CALLQ\t_lang_print_bool\n";
             break;
+        case TVOID:
+            ss << "    CALLQ\t_lang_print_void\n";
+            break;
         default:
             cerr << "WTF\n"; //sanity check
             exit(1);

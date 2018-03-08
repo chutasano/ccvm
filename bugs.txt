@@ -1,0 +1,7 @@
+empty tag:
+    .globl _LANG_VEC_T_0
+    _LANG_VEC_T_0:
+
+
+
+

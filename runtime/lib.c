@@ -61,6 +61,17 @@ void _lang_print_bool(int64_t num)
     }
 }
 
+void _lang_print_void(int64_t num)
+{
+    if (num == 0)
+    {
+        printf("Void\n");
+    }
+    else
+    {
+        printf("ERROR, expected void, got %ld\n", num);
+    }
+}
 // nargs = # of entries in vector (NOT # of entries in this function)
 // va_args should go:
 //   type identifier

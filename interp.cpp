@@ -8,29 +8,41 @@
 using namespace std;
 using namespace r0;
 
+// interpreter only maybe vector
+struct mv
+{
+    mv() { }
+    mv(int a) : val(a), is_vector(false) { }
+    mv(int a, bool b) : val(a), is_vector(b) { }
+    int val;
+    bool is_vector;
+};
+
+vector<vector<mv> > vecs;
+
 // I kept eval separate from the r0 classes because I felt that the interpreter
 // should be its own separate entity. Hence, I have to use some nasty casting.
-int eval(const E* e, map<string, int> vmap)
+mv eval(const E* e, map<string, mv> vmap)
 {
     if (typeid(*e) == typeid(Num))
     {
-        return static_cast<const Num*>(e)->value;
+        return mv(static_cast<const Num*>(e)->value);
     }
     else if (typeid(*e) == typeid(Bool))
     {
-        return static_cast<const Bool*>(e)->value;
+        return mv(static_cast<const Bool*>(e)->value);
     }
     else if (typeid(*e) == typeid(Read))
     {
         int val;
         cin >> val;
-        return val;
+        return mv(val);
     }
     else if (typeid(*e) == typeid(Binop))
     {
         auto b = static_cast<const Binop*>(e);
-        int l = eval(b->l, vmap);
-        int r = eval(b->r, vmap);
+        int l = eval(b->l, vmap).val;
+        int r = eval(b->r, vmap).val;
         int result;
         switch (b->op)
         {
@@ -56,12 +68,12 @@ int eval(const E* e, map<string, int> vmap)
                 cout << "WARN: unknown binary operator: " << b->op << "\n";
                 break;
         }
-        return result;
+        return mv(result);
     }
     else if (typeid(*e) == typeid(Unop))
     {
         auto u = static_cast<const Unop*>(e);
-        int val = eval(u->v, vmap);
+        int val = eval(u->v, vmap).val;
         int result;
         switch (u->op)
         {
@@ -75,7 +87,7 @@ int eval(const E* e, map<string, int> vmap)
                 cout << "WARN: unknown unary operator: " << u->op << "\n";
                 break;
         }
-        return result;
+        return mv(result);
     }
     else if (typeid(*e) == typeid(Var))
     {
@@ -91,7 +103,43 @@ int eval(const E* e, map<string, int> vmap)
     else if (typeid(*e) == typeid(If))
     {
         auto i = static_cast<const If*>(e);
-        return (eval(i->conde, vmap) == TB_TRUE) ? eval(i->thene, vmap) : eval(i->elsee, vmap);
+        return (eval(i->conde, vmap).val == TB_TRUE) ? eval(i->thene, vmap) : eval(i->elsee, vmap);
+    }
+    else if (typeid(*e) == typeid(Vector))
+    {
+        auto v = static_cast<const Vector*>(e);
+        vector<mv> thisvec;
+        for (auto e : v->elist)
+        {
+            thisvec.push_back(eval(e, vmap));
+        }
+        vecs.push_back(thisvec);
+        return mv(vecs.size()-1, true);
+    }
+    else if (typeid(*e) == typeid(VectorRef))
+    {
+        auto vref = static_cast<const VectorRef*>(e);
+        // we can assume this is an index b/c we assume type is correct
+        mv i = eval(vref->vec, vmap);
+        if (!i.is_vector)
+        {
+            cerr << "WTF, type error?\n";
+            return mv(0);
+        }
+        return vecs[i.val][vref->index];
+    }
+    else if (typeid(*e) == typeid(VectorSet))
+    {
+        auto vset = static_cast<const VectorSet*>(e);
+        mv i = eval(vset->vec, vmap);
+        if (!i.is_vector)
+        {
+            cerr << "WTF, type error?\n";
+            return mv(0);
+        }
+        mv v = eval(vset->asg, vmap);
+        vecs[i.val][vset->index] = v;
+        return TV_VOID;
     }
     else
     {
@@ -104,14 +152,22 @@ int eval(const E* e, map<string, int> vmap)
     }
 }
 
-int interp(const P &p)
+mv interp(const P &p)
 {
-    map<string, int> map;
+    map<string, mv> map;
     return eval(p.e, map);
 }
 
 bool test_interp(const P &p, int expect)
 {
-    int actual = interp(p);
-    return expect == actual;
+    mv actual = interp(p);
+    if (actual.is_vector)
+    {
+        cerr << "ERROR: vector as output not yet implemented\n";
+        return false;
+    }
+    else
+    {
+        return expect == actual.val;
+    }
 }

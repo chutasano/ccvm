@@ -24,3 +24,8 @@ enum tbool
     TB_TRUE = 1
 };
 
+enum tvoid
+{
+    TV_VOID = 0
+};
+

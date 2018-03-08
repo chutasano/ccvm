@@ -380,12 +380,16 @@ void test_all()
         UPTR(r0::Vector, v, { n10, n23, nn1, bt, bf} );
         UPTR(r0::VectorRef, vref0, v, 0);
         UPTR(r0::VectorRef, vref4, v, 4);
+        // todo accept vector as return value
+        t(vref0, 10);
+        t(vref4, TB_FALSE);
         tt(v, TVEC+1); // maybe bad test
         tt(vref0, TNUM);
         tt(vref4, TBOOL);
         UPTR(r0::VectorSet, vset0, v, 0, n23);
         UPTR(r0::VectorSet, vset0_fail, v, 0, bt);
         UPTR(r0::VectorSet, vset4, v, 4, bt);
+        t(vset0, TV_VOID);
         tt(vset0, TVOID);
         tt(vset0_fail, TERROR);
         tt(vset4, TVOID);

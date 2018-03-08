@@ -141,6 +141,17 @@ bool test_compile(const r0::P &p, int64_t expect)
             return false;
         }
     }
+    else if (t == TVOID)
+    {
+        if (output == "Void\n")
+        {
+            return expect == TV_VOID;
+        }
+        else
+        {
+            return false;
+        }
+    }
     else
     {
         return false;
