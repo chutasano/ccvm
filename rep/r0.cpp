@@ -26,9 +26,7 @@ using namespace r0;
 //'[i]f
 //'[s]ugar
 
-
 unordered_map<type, list<type>, hash<int> > vec_type;
-
 
 string gensym(string sym, bool reset = false)
 {
@@ -96,8 +94,7 @@ c0::P P::flatten() const
 {
     vector<string> vars;
     vector<c0::AS*> stmts;
-    c0::Arg* a = this->e->to_c0(vars, stmts);
-    type t = this->type_check();
+    c0::Arg* a = e->to_c0(vars, stmts);
     if (t == TERROR)
     {
         cerr << "Type check failed";
@@ -106,10 +103,10 @@ c0::P P::flatten() const
     return c0::P(vars, stmts, a, t);
 }
 
-type P::type_check() const
+void P::type_check()
 {
     unordered_map<string, type> vars;
-    return this->e->t_check(vars);
+    t = e->t_check(vars);
 }
 
 void P::desugar()
@@ -132,8 +129,9 @@ c0::Arg* Num::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
      return new c0::Num(this->value);
 }
 
-type Num::t_check(unordered_map<string, type> vmap) const
+type Num::t_check(unordered_map<string, type> vmap)
 {
+    t = TNUM;
     return TNUM;
 }
 
@@ -152,8 +150,9 @@ c0::Arg* Bool::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
      return new c0::Num(static_cast<int>(this->value));
 }
 
-type Bool::t_check(unordered_map<string, type> vmap) const
+type Bool::t_check(unordered_map<string, type> vmap)
 {
+    t = TBOOL;
     return TBOOL;
 }
 
@@ -175,8 +174,9 @@ c0::Arg* Read::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
     return new c0::Var(s);
 }
 
-type Read::t_check(unordered_map<string, type> vmap) const
+type Read::t_check(unordered_map<string, type> vmap)
 {
+    t = TNUM;
     return TNUM;
 }
 
@@ -201,48 +201,52 @@ c0::Arg* Binop::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
     return new c0::Var(s);
 }
 
-type Binop::t_check(unordered_map<string, type> vmap) const
+type Binop::t_check(unordered_map<string, type> vmap)
 {
-    type lt = this->l->t_check(vmap);
-    type rt = this->r->t_check(vmap);
-    if (lt == TERROR || rt == TERROR)
+    if (t == TUNKNOWN)
     {
-        cerr << "Binop: args have unresolvable types\n";
-        return TERROR;
-    }
-    if (this->op == B_PLUS) // num,num -> num
-    {
-        if (lt == TNUM && rt == TNUM)
+        type lt = this->l->t_check(vmap);
+        type rt = this->r->t_check(vmap);
+        if (lt == TERROR || rt == TERROR)
         {
-            return TNUM;
+            cerr << "Binop: args have unresolvable types\n";
+            t = TERROR;
+        }
+        if (this->op == B_PLUS) // num,num -> num
+        {
+            if (lt == TNUM && rt == TNUM)
+            {
+                t = TNUM;
+            }
+            else
+            {
+                cerr << "Expected num,num got " << lt << ", " << rt << endl;
+                t = TERROR;
+            }
+        }
+        else if ((this->op == B_EQ) || // num, num -> bool
+                (this->op == B_LT) ||
+                (this->op == B_GT) ||
+                (this->op == B_LE) ||
+                (this->op == B_GE))
+        {
+            if (lt == TNUM && rt == TNUM)
+            {
+                t = TBOOL;
+            }
+            else
+            {
+                cerr << "Expected num,num got " << lt << ", " << rt << endl;
+                t = TERROR;
+            }
         }
         else
         {
-            cerr << "Expected num,num got " << lt << ", " << rt << endl;
-            return TERROR;
+            cerr << "Unsupported operator: " << this->op << endl;
+            t = TERROR;
         }
     }
-    else if ((this->op == B_EQ) || // num, num -> bool
-             (this->op == B_LT) ||
-             (this->op == B_GT) ||
-             (this->op == B_LE) ||
-             (this->op == B_GE))
-    {
-        if (lt == TNUM && rt == TNUM)
-        {
-            return TBOOL;
-        }
-        else
-        {
-            cerr << "Expected num,num got " << lt << ", " << rt << endl;
-            return TERROR;
-        }
-    }
-    else
-    {
-        cerr << "Unsupported operator: " << this->op << endl;
-        return TERROR;
-    }
+    return t;
 }
 
 Unop* Unop::clone() const
@@ -263,43 +267,47 @@ c0::Arg* Unop::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
     return new c0::Var(s);
 }
 
-type Unop::t_check(unordered_map<string, type> vmap) const
+type Unop::t_check(unordered_map<string, type> vmap)
 {
-    type vt = this->v->t_check(vmap);
-    if (vt == TERROR)
+    if (t == TUNKNOWN)
     {
-        cerr << "Unop: child has unresolved type\n";
-        return TERROR;
-    }
-    if (this->op == U_NEG) // num -> num
-    {
-        if (vt == TNUM)
+        type vt = this->v->t_check(vmap);
+        if (vt == TERROR)
         {
-            return TNUM;
+            cerr << "Unop: child has unresolved type\n";
+            t = TERROR;
+        }
+        if (this->op == U_NEG) // num -> num
+        {
+            if (vt == TNUM)
+            {
+                t = TNUM;
+            }
+            else
+            {
+                cerr << "U_NEG expects a TNUM\n";
+                t = TERROR;
+            }
+        }
+        else if (this->op == U_NOT) // bool -> bool
+        {
+            if (vt == TBOOL)
+            {
+                t = TBOOL;
+            }
+            else
+            {
+                cerr << "U_NOT expects a TBOOL\n";
+                t = TERROR;
+            }
         }
         else
         {
-            cerr << "U_NEG expects a TNUM\n";
-            return TERROR;
+            cerr << "Bad unary op " << this->op << endl;
+            t = TERROR;
         }
     }
-    else if (this->op == U_NOT) // bool -> bool
-    {
-        if (vt == TBOOL)
-        {
-            return TBOOL;
-        }
-        else
-        {
-            cerr << "U_NOT expects a TBOOL\n";
-            return TERROR;
-        }
-    }
-    else
-    {
-        cerr << "Bad unary op " << this->op << endl;
-        return TERROR;
-    }
+    return t;
 }
 
 Var* Var::clone() const
@@ -325,9 +333,13 @@ c0::Arg* Var::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
     return new c0::Var(this->name);
 }
 
-type Var::t_check(unordered_map<string, type> vmap) const
+type Var::t_check(unordered_map<string, type> vmap)
 {
-    return vmap.at(this->name);
+    if (t == TUNKNOWN)
+    {
+        t = vmap.at(this->name);
+    }
+    return t;
 }
 
 Let* Let::clone() const
@@ -356,10 +368,14 @@ c0::Arg* Let::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
     return this->be->to_c0(vars, stmts);
 }
 
-type Let::t_check(unordered_map<string, type> vmap) const
+type Let::t_check(unordered_map<string, type> vmap)
 {
-    vmap[this->name] = this->ve->t_check(vmap);
-    return this->be->t_check(vmap);
+    if (t == TUNKNOWN)
+    {
+        vmap[this->name] = this->ve->t_check(vmap);
+        t = this->be->t_check(vmap);
+    }
+    return t;
 }
 
 If* If::clone() const
@@ -400,24 +416,28 @@ c0::Arg* If::to_c0(vector<string> &vars, vector<c0::AS*> &stmts) const
     return new c0::Var(s);
 }
 
-type If::t_check(unordered_map<string, type> vmap) const
+type If::t_check(unordered_map<string, type> vmap)
 {
-    if (conde->t_check(vmap) != TBOOL)
+    if (t == TUNKNOWN)
     {
-        cerr << "If: cond expression does not have type bool\n";
-        return TERROR;
+        if (conde->t_check(vmap) != TBOOL)
+        {
+            cerr << "If: cond expression does not have type bool\n";
+            t = TERROR;
+        }
+        type thent = thene->t_check(vmap);
+        type elset = elsee->t_check(vmap);
+        if (thent == elset)
+        {
+            t = thent; // if both are TERROR, we'll catch it from the ret anyway
+        }
+        else
+        {
+            cerr << "If: then and else expression types not matching\n";
+            t = TERROR;
+        }
     }
-    type thent = thene->t_check(vmap);
-    type elset = elsee->t_check(vmap);
-    if (thent == elset)
-    {
-        return thent; // if both are TERROR, we'll catch it from the ret anyway
-    }
-    else
-    {
-        cerr << "If: then and else expression types not matching\n";
-        return TERROR;
-    }
+    return t;
 }
 
 vector<E*> Sugar::get_childs()
@@ -432,7 +452,7 @@ void Sugar::uniquify(unordered_map<string, string> a)
     exit(10);
 }
 
-type Sugar::t_check(unordered_map<string, type> a) const
+type Sugar::t_check(unordered_map<string, type> a)
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);

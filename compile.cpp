@@ -27,6 +27,7 @@ using namespace std;
 static string to_asm(r0::P &p)
 {
     p.uniquify();
+    p.type_check();
     c0::P c = p.flatten();
     x0s::P xs = c.select();
     x0::P x0 = xs.assign();
@@ -94,7 +95,7 @@ bool test_compile(const r0::P &p, int64_t expect)
 {
     r0::P cpy = r0::P(p);
     string output = compile_run(cpy);
-    type t = cpy.type_check();
+    type t = cpy.t;
     cpy.deep_delete();
     size_t pos = 0;
 #ifdef DEBUG

@@ -9,6 +9,7 @@ enum type
     TBOOL,
     TVOID,
     TERROR,
+    TUNKNOWN,
     TVEC // TVEC should be the last one, TVEC+n will internally be used to separate
          // different vector types
 };

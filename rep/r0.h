@@ -13,14 +13,16 @@ namespace r0
 
     struct E
     {
+        E() : t(TUNKNOWN) { }
         virtual ~E() { }
         virtual std::vector<E*> get_childs() = 0;
         virtual void uniquify(std::unordered_map<std::string, std::string>) = 0;
-        virtual type t_check(std::unordered_map<std::string, type>) const = 0;
+        virtual type t_check(std::unordered_map<std::string, type>) = 0;
         virtual c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const = 0;
         virtual E* clone() const = 0;
         virtual void deep_delete() = 0;
         virtual E* desugar() = 0;
+        type t;
     };
 
     struct P
@@ -28,10 +30,11 @@ namespace r0
         P(E* ee) : e(ee) { }
         P(const P &obj);
         E* e;
+        type t;
         void deep_delete();
         bool is_unique() const;
         void uniquify();
-        type type_check() const;
+        void type_check();
         c0::P flatten() const;
         void desugar();
     };
@@ -42,7 +45,7 @@ namespace r0
         int64_t value;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string , type>) const;
+        type t_check(std::unordered_map<std::string , type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Num* clone() const;
         void deep_delete() { }
@@ -55,7 +58,7 @@ namespace r0
         tbool value;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string , type>) const;
+        type t_check(std::unordered_map<std::string , type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Bool* clone() const;
         void deep_delete() { }
@@ -67,7 +70,7 @@ namespace r0
         Read() { }
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string , type>) const;
+        type t_check(std::unordered_map<std::string , type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Read* clone() const;
         void deep_delete() { }
@@ -82,7 +85,7 @@ namespace r0
         E* r;
         std::vector<E*> get_childs() { return {l, r}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string , type>) const;
+        type t_check(std::unordered_map<std::string , type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Binop* clone() const;
         void deep_delete() { l->deep_delete(); r->deep_delete(); delete l; delete r; }
@@ -96,7 +99,7 @@ namespace r0
         E* v;
         std::vector<E*> get_childs() { return {v}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string , type>) const;
+        type t_check(std::unordered_map<std::string , type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Unop* clone() const;
         void deep_delete() { v->deep_delete(); delete v; }
@@ -109,7 +112,7 @@ namespace r0
         std::string name;
         std::vector<E*> get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string , type>) const;
+        type t_check(std::unordered_map<std::string , type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Var* clone() const;
         void deep_delete() { }
@@ -124,7 +127,7 @@ namespace r0
         E* be;
         std::vector<E*> get_childs() { return {ve, be}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string , type>) const;
+        type t_check(std::unordered_map<std::string , type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         Let* clone() const;
         void deep_delete() { ve->deep_delete(); be->deep_delete(); delete ve; delete be; }
@@ -139,7 +142,7 @@ namespace r0
         E* elsee;
         std::vector<E*> get_childs() { return { conde, thene, elsee}; }
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string, type>) const;
+        type t_check(std::unordered_map<std::string, type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
         If* clone() const;
         void deep_delete() { conde->deep_delete(); thene->deep_delete(); elsee->deep_delete();
@@ -152,7 +155,7 @@ namespace r0
     {
         std::vector<E*> get_childs();
         void uniquify(std::unordered_map<std::string, std::string>);
-        type t_check(std::unordered_map<std::string, type>) const;
+        type t_check(std::unordered_map<std::string, type>);
         c0::Arg* to_c0(std::vector<std::string> &vars, std::vector<c0::AS*> &stmts) const;
     };
 

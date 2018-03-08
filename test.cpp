@@ -109,6 +109,8 @@ static void ts(string name)
     cout << endl << "Test suite: " << name << endl;
 }
 
+static int fails = 0;
+
 static void t(r0::E* e, int expect)
 {
     r0::P p(e);
@@ -120,6 +122,7 @@ static void t(r0::E* e, int expect)
     else
     {
         cout << "  Test failed!!!!!!!!!!!!!!!!1\n";
+        fails++;
     }
 }
 
@@ -158,7 +161,8 @@ static void tu(r0::E* e, bool unique)
 static void tt(r0::E* e, type expect)
 {
     r0::P p(e);
-    type ty = p.type_check();
+    p.type_check();
+    type ty = p.t;
     if (ty == expect)
     {
         cout << "  Test passed: type check\n";
@@ -368,5 +372,7 @@ void test_all()
         UPTR(r0::Begin, beg, {n123, n234, n345, n456});
         t(beg, 456);
     }
+
+    cout << "Total tests failed: " << fails << endl;
 }
 

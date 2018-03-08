@@ -1,9 +1,10 @@
 text + parser ->
 ---
 
-r0s + de-sugar ->
+r0 + de-sugar ->
 
 r0 + uniquify ->
+r0 + type_check ->
 "r1" (actually contained in r0 data structure) + flatten ->
 
 c0 + select ->
