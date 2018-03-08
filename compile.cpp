@@ -93,7 +93,7 @@ string compile_run(r0::P &p)
 
 bool test_compile(const r0::P &p, int64_t expect)
 {
-    r0::P cpy = r0::P(p);
+    r0::P cpy(p);
     string output = compile_run(cpy);
     type t = static_cast<type>(cpy.t);
     cpy.deep_delete();

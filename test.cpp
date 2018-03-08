@@ -129,7 +129,8 @@ static void t(r0::E* e, int expect)
 // test for uniqueness and uniquify
 static void tu(r0::E* e, bool unique)
 {
-    r0::P p(e);
+    r0::P a(e);
+    r0::P p(a); 
     if (p.is_unique() && unique)
     {
         cout << "  Test passed, both unique\n";
@@ -158,12 +159,13 @@ static void tu(r0::E* e, bool unique)
 }
 
 // test for typechecker
-static void tt(r0::E* e, type expect)
+static void tt(r0::E* e, int expect)
 {
-    r0::P p(e);
+    r0::P a(e);
+    r0::P p(a); // copy P because typecheck modifies type field
     p.type_check();
     int ty = p.t;
-    if (ty == static_cast<int>(expect))
+    if (ty == expect)
     {
         cout << "  Test passed: type check\n";
     }
@@ -371,6 +373,22 @@ void test_all()
         NUM(456);
         UPTR(r0::Begin, beg, {n123, n234, n345, n456});
         t(beg, 456);
+    }
+
+    ts("Vector");
+    {
+        UPTR(r0::Vector, v, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::VectorRef, vref0, v, 0);
+        UPTR(r0::VectorRef, vref4, v, 4);
+        tt(v, TVEC+1); // maybe bad test
+        tt(vref0, TNUM);
+        tt(vref4, TBOOL);
+        UPTR(r0::VectorSet, vset0, v, 0, n23);
+        UPTR(r0::VectorSet, vset0_fail, v, 0, bt);
+        UPTR(r0::VectorSet, vset4, v, 4, bt);
+        tt(vset0, TVOID);
+        tt(vset0_fail, TERROR);
+        tt(vset4, TVOID);
     }
 
     cout << "Total tests failed: " << fails << endl;

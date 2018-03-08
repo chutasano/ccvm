@@ -107,6 +107,7 @@ c0::P P::flatten() const
 void P::type_check()
 {
     vec_type.clear();
+    vec_type[TVEC] = { };
     unordered_map<string, int> vars;
     t = e->t_check(vars);
 }
@@ -481,7 +482,6 @@ int Vector::t_check(unordered_map<string, int> vmap)
     if (t == TUNKNOWN)
     {
         vector<int> types;
-        types.reserve(elist.size());
         for (E* e : elist)
         {
             types.push_back(e->t_check(vmap));
@@ -544,7 +544,7 @@ int VectorSet::t_check(unordered_map<string, int> vmap)
         vector<int> types = vec_type[t_vec];
         if(types[index] == asg->t_check(vmap))
         {
-            t = types[index];
+            t = TVOID;
         }
         else
         {
