@@ -27,7 +27,10 @@ static void swap()
 
 void _lang_debug()
 {
-    printf("%lu\n", _LANG_NUM_T);
+    printf("NUM_T:  %lu\n", _LANG_NUM_T);
+    printf("BOOL_T: %lu\n", _LANG_BOOL_T);
+    printf("VOID_T: %lu\n", _LANG_VOID_T);
+    printf("VEC_T:  %lu\n", _LANG_VEC_T);
 }
 
 int64_t _lang_read_num()

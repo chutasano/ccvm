@@ -127,9 +127,10 @@ namespace x0
 
     struct Tag
     {
-        Tag(std::string name, std::list<int64_t> vals) : name(name), vals(vals) { }
+        Tag(std::string name, std::list<type> vals) : name(name), vals(vals) { }
+        Tag(std::string name, type val) : name(name), vals({val}) { }
         std::string name;
-        std::list<int64_t> vals;
+        std::list<type> vals;
         std::string to_asm();
     };
 

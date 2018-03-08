@@ -7,6 +7,7 @@
 
 #include "asm.h"
 #include "graph.h"
+#include "type.h"
 #include "x0s.h"
 
 using namespace std;
@@ -133,7 +134,17 @@ x0::P P::assign()
             ins.splice(ins.end(), iptr->assign());
         }
     }
-    return x0::P(ins, { x0::Tag("_LANG_NUM_T", { 0 })});
+    list<x0::Tag> tags;
+    tags.push_back(x0::Tag("_LANG_NUM_T", TNUM));
+    tags.push_back(x0::Tag("_LANG_BOOL_T", TBOOL));
+    tags.push_back(x0::Tag("_LANG_VOID_T", TVOID));
+    tags.push_back(x0::Tag("_LANG_VEC_T", TVEC));
+    // type -> list of types (for vectors)
+    for (auto vpair : vec_type)
+    {
+        tags.push_back(x0::Tag("_LANG_VEC_T_" + to_string(vpair.first - TVEC), vpair.second));
+    }
+    return x0::P(ins, tags);
 }
 
 x0::Arg* Reg::assign()

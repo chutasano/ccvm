@@ -119,7 +119,7 @@ bool test_compile(const r0::P &p, int64_t expect)
         }
     }
 #ifdef DEBUG
-    cout << "    PROGRAM OUTPUT END\n";
+    cout << "    PROGRAM OUTPUT END\n\n";
 #endif
     if (t == TNUM)
     {
