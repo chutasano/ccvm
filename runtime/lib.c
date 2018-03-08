@@ -25,6 +25,11 @@ static void swap()
     mprotect(to, pagesize, PROT_NONE);
 }
 
+void _lang_debug()
+{
+    printf("%lu\n", _LANG_NUM_T);
+}
+
 int64_t _lang_read_num()
 {
     int64_t a;

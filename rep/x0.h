@@ -125,11 +125,20 @@ namespace x0
         std::string to_asm();
     };
 
+    struct Tag
+    {
+        Tag(std::string name, std::list<int64_t> vals) : name(name), vals(vals) { }
+        std::string name;
+        std::list<int64_t> vals;
+        std::string to_asm();
+    };
+
     // program container for X0
     struct P
     {
-        P(std::list<I*> is) : instr(is) { }
+        P(std::list<I*> is, std::list<Tag> g) : instr(is), globals(g) { }
         std::list<I*> instr;
+        std::list<Tag> globals;
         std::string to_asm();
         void fix();
     };

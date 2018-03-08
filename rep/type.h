@@ -1,11 +1,21 @@
 #pragma once
 
+#include <list>
+#include <unordered_map>
+
 enum type
 {
-    TNUM,
+    TNUM = 0,
     TBOOL,
-    TERROR
+    TVOID,
+    TERROR,
+    TVEC // TVEC should be the last one, TVEC+n will internally be used to separate
+         // different vector types
 };
+
+// global should be made in r0 and populated during the type checking phase
+// map from type (TVEC + n) to list of types
+extern std::unordered_map<type, std::list<type>, std::hash<int> > vec_type;
 
 enum tbool
 {

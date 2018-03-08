@@ -107,6 +107,7 @@ x0::P P::assign()
     ins.push_back(new x0::ILabel("main"));
     int total_offset;
     bool need_stack = worst >= regs.size();
+    ins.push_back(new x0::ICall("_lang_debug"));
     if (need_stack)
     {
         total_offset = 8*(worst - regs.size() + 1);
@@ -130,7 +131,7 @@ x0::P P::assign()
             ins.splice(ins.end(), iptr->assign());
         }
     }
-    return x0::P(ins);
+    return x0::P(ins, { x0::Tag("_LANG_NUM_T", { 0 })});
 }
 
 x0::Arg* Reg::assign()

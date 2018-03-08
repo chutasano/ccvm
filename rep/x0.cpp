@@ -14,6 +14,14 @@ using namespace x0;
 string P::to_asm()
 {
     stringstream ss;
+    ss << ".section .data" << endl;
+    for (auto t : globals)
+    {
+        ss << "    " << ".globl " << t.name << endl
+           << "    " << t.name << ":" << endl
+           << t.to_asm() << endl;
+    }
+    ss  << ".section .text" << endl;
     ss  << ".globl main" << endl;
     for (auto i : instr)
     {
@@ -156,4 +164,14 @@ void P::fix()
             ++it;
         }
     }
+}
+
+string Tag::to_asm()
+{
+    stringstream ss;
+    for (auto v : vals)
+    {
+        ss << "        .quad " << v << endl;
+    }
+    return ss.str();
 }

@@ -27,6 +27,9 @@ using namespace r0;
 //'[s]ugar
 
 
+unordered_map<type, list<type>, hash<int> > vec_type;
+
+
 string gensym(string sym, bool reset = false)
 {
     static unordered_map<string, unsigned int> count;

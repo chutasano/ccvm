@@ -22,7 +22,7 @@ using namespace std;
 #define STR(a) _STR(a)
 #define _STR(a) #a
 
-//#define DEBUG
+#define DEBUG
 
 static string to_asm(r0::P &p)
 {
@@ -96,6 +96,30 @@ bool test_compile(const r0::P &p, int64_t expect)
     string output = compile_run(cpy);
     type t = cpy.type_check();
     cpy.deep_delete();
+    size_t pos = 0;
+#ifdef DEBUG
+    cout << "\n\n    PROGRAM OUTPUT\n";
+#endif
+    while ((pos = output.find("\n")) != string::npos)
+    {
+        // last output line needs to be parsed for testing
+        // only print and erase if it's not the last line
+        if (output.find("\n", pos) == output.size()-1 ||
+            output.find("\n", pos) == string::npos)
+        {
+            break;
+        }
+        else
+        {
+#ifdef DEBUG
+            cout << output.substr(0, pos + 1);
+#endif
+            output.erase(0, pos + 1);
+        }
+    }
+#ifdef DEBUG
+    cout << "    PROGRAM OUTPUT END\n";
+#endif
     if (t == TNUM)
     {
         int64_t actual = stoll(output, nullptr);
