@@ -474,7 +474,7 @@ c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts)
 {
     string s = gensym("r0Vector");
     vars[s] = t;
-    stmts.push_back(new c0::S(s, new c0::Alloc(1 + elist.size(), t)));
+    stmts.push_back(new c0::S(s, new c0::Alloc(elist.size(), t)));
     string schild = s + "Children";
     vars[schild] = TNUM;
     int i = 0;

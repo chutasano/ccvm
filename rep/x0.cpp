@@ -61,7 +61,7 @@ string Mem::to_string()
 
 string Global::to_string()
 {
-    return "$" + name;
+    return name;
 }
 
 string ILabel::to_asm()
@@ -156,6 +156,15 @@ void P::fix()
                     Dst* local_dst = i->dst;
                     i->dst = new Reg("rax");
                     it = this->instr.insert(++it, new ISrcDst(MOVQ, i->dst, local_dst));
+                }
+                if (i->instr == LEAQ &&
+                        typeid(*(i->src)) == typeid(Global) &&
+                        typeid(*(i->dst)) == typeid(Mem))
+                {
+                    ISrcDst* leaq = new ISrcDst(LEAQ, i->src, new Reg("rax"));
+                    i->src = new Reg("rax");
+                    i->instr = MOVQ;
+                    it = this->instr.insert(it, leaq);
                 }
                 // we need to fix two args both being memory references
                 else if (typeid(*(i->src)) == typeid(Mem) &&

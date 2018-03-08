@@ -25,6 +25,7 @@
     ES(MOVQ)       \
     ES(XORQ)       \
     ES(CMPQ)       \
+    ES(LEAQ)       \
     ES(MOVZBQ)
 
 #define X0_SRC_SRC 

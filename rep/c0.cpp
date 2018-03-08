@@ -86,7 +86,7 @@ list<x0s::I*> Unop::select(x0s::Var* var)
 
 list<x0s::I*> Alloc::select(x0s::Var* var)
 {
-    return { new x0s::ISrcDst(MOVQ, new x0s::Global(type2name(tag)), 
+    return { new x0s::ISrcDst(LEAQ, new x0s::Global(type2name(tag)), 
                       new x0s::Deref(new x0s::Reg("r15"), 0)),
              new x0s::ISrcDst(MOVQ, new x0s::Reg("r15"), var),
              new x0s::ISrcDst(ADDQ, new x0s::Con(8*(1+size)), new x0s::Reg("r15")) };
@@ -94,15 +94,15 @@ list<x0s::I*> Alloc::select(x0s::Var* var)
 
 list<x0s::I*> VecRef::select(x0s::Var* var)
 {
-    return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("rax")),
-             new x0s::ISrcDst(MOVQ, new x0s::Deref(new x0s::Reg("rax"), 8*(1+index)), var) };
+    return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("r8")),
+             new x0s::ISrcDst(MOVQ, new x0s::Deref(new x0s::Reg("r8"), 8*(1+index)), var) };
 }
 
 list<x0s::I*> VecSet::select(x0s::Var* var)
 {
-    return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("rax")),
+    return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("r8")),
              new x0s::ISrcDst(MOVQ, asg->to_arg(),
-                      new x0s::Deref(new x0s::Reg("rax"), 8*(1+index))),
+                      new x0s::Deref(new x0s::Reg("r8"), 8*(1+index))),
              new x0s::ISrcDst(MOVQ, new x0s::Con(TV_VOID), var) };
 }
 

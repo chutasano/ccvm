@@ -106,12 +106,18 @@ x0::P P::assign()
     list<x0::I*> ins;
     ins.push_back(new x0::ILabel("main"));
     int total_offset;
+    int64_t root_stack_size = 1;
     bool need_stack = worst >= regs.size();
     ins.push_back(new x0::ICall("_lang_debug"));
     if (need_stack)
     {
         total_offset = 8*(worst - regs.size() + 1);
         ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+    }
+    if (root_stack_size > 0)
+    {
+        ICall a("_lang_init_rootstack", { new Con(root_stack_size)}, new Reg("r11"));
+        ins.splice(ins.end(), a.assign());
     }
     for (auto iptr : this->instr)
     {

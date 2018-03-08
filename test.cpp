@@ -395,6 +395,20 @@ void test_all()
         tt(vset4, TVOID);
     }
 
+    ts("Lots of Vectors");
+    {
+        UPTR(r0::Vector, v1, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v2, { n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v3, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v4, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v5, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v6, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v7, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v8, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Begin, b, {v1,v2,v3,v4,v5,v6,v7,v8, n10 });
+        t(b, 10);
+    }
+
     cout << "Total tests failed: " << fails << endl;
 }
 
