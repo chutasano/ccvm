@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/mman.h>
 #include <unistd.h>
 
@@ -32,11 +33,32 @@ static void swap()
 
 void _lang_debug()
 {
-//    printf("NUM_T:  %lu\n", _LANG_NUM_T);
-//    printf("BOOL_T: %lu\n", _LANG_BOOL_T);
-//    printf("VOID_T: %lu\n", _LANG_VOID_T);
-//    printf("VEC_T:  %lu\n", _LANG_VEC_T);
+    printf("NUM_T:  %lu\n", _LANG_NUM_T);
+    printf("BOOL_T: %lu\n", _LANG_BOOL_T);
+    printf("VOID_T: %lu\n", _LANG_VOID_T);
+    printf("VEC_T:  %lu\n", _LANG_VEC_T);
     debug = 1;
+}
+
+void _lang_print_vec(int64_t*);
+static void _lang_print_num_impl(int64_t, int);
+static void _lang_print_bool_impl(int64_t, int);
+static void _lang_print_void_impl(int64_t, int);
+
+
+void _lang_print_num(int64_t num)
+{
+    _lang_print_num_impl(num, 1);
+}
+
+void _lang_print_bool(int64_t num)
+{
+    _lang_print_bool_impl(num, 1);
+}
+
+void _lang_print_void(int64_t num)
+{
+    _lang_print_void_impl(num, 1);
 }
 
 static void print_all_heap(int64_t* start)
@@ -44,29 +66,8 @@ static void print_all_heap(int64_t* start)
     debug = 0;
     while (start[0] != 0)
     {
-        printf("Vec:\n");
+        _lang_print_vec(start);
         int64_t* tag = (int64_t*)start[0];
-        int i;
-        for (i=1; i<tag[0]+1; i++)
-        {
-            printf("    ");
-            if (tag[i] == _LANG_NUM_T)
-            {
-                _lang_print_num(start[i]);
-            }
-            else if (tag[i] == _LANG_BOOL_T)
-            {
-                _lang_print_bool(start[i]);
-            }
-            else if (tag[i] ==_LANG_VOID_T)
-            {
-                _lang_print_void(start[i]);
-            }
-            else
-            {
-                print_all_heap(start+i);
-            }
-        }
         start += tag[0]+1;
     }
 }
@@ -78,37 +79,45 @@ int64_t _lang_read_num()
     return a;
 }
 
-void _lang_print_num(int64_t num)
+// no need for new line when called by _lang_print_vec
+static void _lang_print_num_impl(int64_t num, int new_line)
 {
     if (debug)
     {
         print_all_heap(from);
     }
-    printf("%ld\n", num);
+    printf("%ld", num);
+    if (new_line)
+    {
+        printf("\n");
+    }
 }
 
-void _lang_print_bool(int64_t num)
+static void _lang_print_bool_impl(int64_t num, int new_line)
 {
     if (debug)
     {
         print_all_heap(from);
     }
-
     if (num == 1)
     {
-        printf("True\n");
+        printf("True");
     }
     else if (num == 0)
     {
-        printf("False\n");
+        printf("False");
     }
     else
     {
         printf("ERROR, expected boolean, got %ld\n", num);
     }
+    if (new_line)
+    {
+        printf("\n");
+    }
 }
 
-void _lang_print_void(int64_t num)
+static void _lang_print_void_impl(int64_t num, int new_line)
 {
     if (debug)
     {
@@ -116,11 +125,15 @@ void _lang_print_void(int64_t num)
     }
     if (num == 0)
     {
-        printf("Void\n");
+        printf("Void");
     }
     else
     {
         printf("ERROR, expected void, got %ld\n", num);
+    }
+    if (new_line)
+    {
+        printf("\n");
     }
 }
 // nargs = # of entries in vector (NOT # of entries in this function)
@@ -139,6 +152,7 @@ void* _lang_init_heap(int64_t heap_size)
         exit(2);
     }
     posix_memalign(&buf, pagesize, 5 * pagesize);
+    memset(buf, 0, 5 * pagesize);
     mprotect(buf, pagesize, PROT_NONE);
     mprotect(buf+pagesize, pagesize, PROT_READ | PROT_WRITE);
     mprotect(buf+2*pagesize, pagesize, PROT_NONE);
@@ -150,6 +164,40 @@ void* _lang_init_heap(int64_t heap_size)
     _LANG_HEAP_END = from + heapsize;
     return from;
 }
+
+void _lang_print_vec(int64_t* start)
+{
+    if (debug)
+    {
+        print_all_heap(from);
+    }
+    printf("Vec: ");
+    int64_t* tag = (int64_t*)start[0];
+    int i;
+    for (i=1; i<tag[0]+1; i++)
+    {
+        if (tag[i] == _LANG_NUM_T)
+        {
+            _lang_print_num_impl(start[i], 0);
+        }
+        else if (tag[i] == _LANG_BOOL_T)
+        {
+            _lang_print_bool_impl(start[i], 0);
+        }
+        else if (tag[i] ==_LANG_VOID_T)
+        {
+            _lang_print_void_impl(start[i], 0);
+        }
+        else
+        {
+            _lang_print_vec(start+i);
+        }
+        printf(" ");
+    }
+    printf("\n");
+}
+
+
 
 void* _lang_init_rootstack(int64_t rootstack_size)
 {

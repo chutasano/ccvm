@@ -404,9 +404,11 @@ void test_all()
         UPTR(r0::Vector, v5, { n10, n23, nn1, bt, bf} );
         UPTR(r0::Vector, v6, { n10, n23, nn1, bt, bf} );
         UPTR(r0::Vector, v7, { n10, n23, nn1, bt, bf} );
-        UPTR(r0::Vector, v8, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v8, { n10, nn1, bf} );
         UPTR(r0::Begin, b, {v1,v2,v3,v4,v5,v6,v7,v8, n10 });
         t(b, 10);
+        UPTR(r0::Begin, vs, {v1,v2,v3,v4,v5,v6,v7,v8});
+        t(vs, 1); //TODO
     }
 
     cout << "Total tests failed: " << fails << endl;

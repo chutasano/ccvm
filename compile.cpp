@@ -18,7 +18,6 @@
 
 using namespace std;
 
-//#define RUNTIME /home/cs/lang/runtime/
 #define STR(a) _STR(a)
 #define _STR(a) #a
 
@@ -151,6 +150,10 @@ bool test_compile(const r0::P &p, int64_t expect)
         {
             return false;
         }
+    }
+    else if (t > TVEC)
+    {
+        return true;
     }
     else
     {

@@ -125,9 +125,16 @@ string IRet::to_asm()
             ss << "    CALLQ\t_lang_print_void\n";
             break;
         default:
-            cerr << "WTF\n"; //sanity check
-            exit(1);
-            break;
+            if (t > TVEC) // types > vec are reserved for dynamic types
+            {
+                ss << "    CALLQ\t_lang_print_vec\n";
+                break;
+            }
+            else
+            {
+                cerr <<"WTF???\n";
+                exit(2);
+            }
     }
     ss << "    RETQ";
     return ss.str();
