@@ -161,20 +161,6 @@ mv interp(const P &p)
     return eval(p.e, map);
 }
 
-bool test_interp(const P &p, int expect)
-{
-    mv actual = interp(p);
-    if (actual.is_vector)
-    {
-        cerr << "ERROR: got vector when expecting non-vector";
-        return false;
-    }
-    else
-    {
-        return expect == actual.val;
-    }
-}
-
 static bool veceq(mv actual, vec_t expect[], int where)
 {
     if (actual.is_vector && expect[where].t == TVEC)
@@ -206,7 +192,7 @@ bool test_interp(const P &p, vec_t expect[])
     mv actual = interp(p);
     if (!actual.is_vector)
     {
-        return test_interp(p, expect[0].val);
+        return expect[0].val == actual.val;
     }
     else
     {

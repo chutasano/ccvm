@@ -9,12 +9,15 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <sstream>
 #include <typeinfo>
 
 #include "rep/c0.h"
 #include "rep/r0.h"
 #include "rep/x0.h"
 #include "rep/x0s.h"
+#include "rep/type.h"
+#include "test.h"
 
 using namespace std;
 
@@ -90,7 +93,82 @@ string compile_run(r0::P &p)
     return result; 
 }
 
-bool test_compile(const r0::P &p, int64_t expect)
+static bool t_num(string output, int64_t expect)
+{
+    int64_t actual = stoll(output, nullptr);
+    return expect == actual;
+}
+
+static bool t_bool(string output, int64_t expect)
+{
+    // initialize actual as opposite of expect to fail by default
+    tbool actual = expect == 0 ? TB_TRUE : TB_FALSE;
+    if (output == "True\n" || output == "True")
+    {
+        actual = TB_TRUE;
+    }
+    else if (output == "False\n" || output == "False")
+    {
+        actual = TB_FALSE;
+    }
+    return expect == actual;
+}
+
+static bool t_void(string output, int64_t expect)
+{
+    if (output == "Void\n" || output == "Void")
+    {
+        return expect == TV_VOID;
+    }
+    else
+    {
+        return false;
+    }
+}
+
+static bool t_vec(stringstream &output, vec_t expect[], int where)
+{
+    if (expect[where].t == TVEC)
+    {
+        bool status = true;
+        for (int i=0; i < expect[where].val; i++)
+        {
+            string dummy;
+            output >> dummy;
+            if (dummy == "Vec:")
+            {
+                status &= t_vec(output, expect, where+i+1);
+            }
+            else
+            {
+                switch(expect[where+i+1].t)
+                {
+                    case TNUM:
+                        status &= t_num(dummy, expect[where+i+1].val);
+                        break;
+                    case TBOOL:
+                        status &= t_bool(dummy, expect[where+i+1].val);
+                        break;
+                    case TVOID:
+                        status &= t_void(dummy, expect[where+i+1].val);
+                        break;
+                    default:
+                        cerr << "Compile: WTF? unexpected type in expect";
+                        break;
+                }
+            }
+        }
+        return status;
+    }
+    else
+    {
+        cerr << "ERROR: got a vector, expected non-vector";
+        return false;
+    }
+}
+
+
+bool test_compile(const r0::P &p, vec_t expect[])
 {
     r0::P cpy(p);
     string output = compile_run(cpy);
@@ -120,44 +198,33 @@ bool test_compile(const r0::P &p, int64_t expect)
 #ifdef DEBUG
     cout << "    PROGRAM OUTPUT END\n\n";
 #endif
-    if (t == TNUM)
+    switch(t)
     {
-        int64_t actual = stoll(output, nullptr);
-        return expect == actual;
-    }
-    else if (t == TBOOL)
-    {
-        if (output == "True\n")
-        {
-            return expect == TB_TRUE;
-        }
-        else if (output == "False\n")
-        {
-            return expect == TB_FALSE;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else if (t == TVOID)
-    {
-        if (output == "Void\n")
-        {
-            return expect == TV_VOID;
-        }
-        else
-        {
-            return false;
-        }
-    }
-    else if (t > TVEC)
-    {
-        return true;
-    }
-    else
-    {
-        return false;
+        case TNUM:
+            return t_num(output, expect[0].val);
+        case TBOOL:
+            return t_bool(output, expect[0].val);
+        case TVOID:
+            return t_void(output, expect[0].val);
+        default:
+            if (t > TVEC)
+            {
+                stringstream ss;
+                ss.str(output);
+                string dummy;
+                ss >> dummy;
+                if (dummy != "Vec:")
+                {
+                    cerr << "Didn't get vec from program?";
+                    return false;
+                }
+                return t_vec(ss, expect, 0);
+            }
+            else
+            {
+                cerr << "Compile: unknown type";
+                return false;
+            }
     }
 }
 

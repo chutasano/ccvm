@@ -64,7 +64,8 @@ function<bool(r0::P, vec_t[])> testfunc;
 static bool both(const r0::P &p, vec_t expect[])
 {
     bool woof = test_interp(p, expect);
-    bool meow = test_compile(p, expect[0].val);
+    //bool meow = test_compile(p, expect[0].val);
+    bool meow = test_compile(p, expect);
     if (!woof)
     {
         cerr << "Interpreter failed\n";
