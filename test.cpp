@@ -59,12 +59,12 @@
 
 using namespace std;
 
-function<bool(r0::P, int)> testfunc;
+function<bool(r0::P, vec_t[])> testfunc;
 
-static bool both(const r0::P &p, int expect)
+static bool both(const r0::P &p, vec_t expect[])
 {
     bool woof = test_interp(p, expect);
-    bool meow = test_compile(p, expect);
+    bool meow = test_compile(p, expect[0].val);
     if (!woof)
     {
         cerr << "Interpreter failed\n";
@@ -111,7 +111,7 @@ static void ts(string name)
 
 static int fails = 0;
 
-static void t(r0::E* e, int expect)
+static void t(r0::E* e, vec_t expect[])
 {
     r0::P p(e);
     p.desugar();
@@ -121,9 +121,15 @@ static void t(r0::E* e, int expect)
     }
     else
     {
-        cout << "  Test failed!!!!!!!!!!!!!!!!1\n";
+        cout << "  Test failed!!!!!!!!!!!!\n";
         fails++;
     }
+}
+
+static void t(r0::E* e, int expect)
+{
+    vec_t woof[] = { vec_t(TNUM, expect) };
+    t(e, woof);
 }
 
 // test for uniqueness and uniquify
@@ -408,7 +414,14 @@ void test_all()
         UPTR(r0::Begin, b, {v1,v2,v3,v4,v5,v6,v7,v8, n10 });
         t(b, 10);
         UPTR(r0::Begin, vs, {v1,v2,v3,v4,v5,v6,v7,v8});
-        t(vs, 1); //TODO
+        vec_t vs_expect[] = 
+        {
+            vec_t(TVEC, 3),
+            vec_t(TNUM, 10),
+            vec_t(TNUM, -1),
+            vec_t(TBOOL, TB_FALSE)
+        };
+        t(vs, vs_expect);
     }
 
     cout << "Total tests failed: " << fails << endl;

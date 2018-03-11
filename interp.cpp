@@ -4,6 +4,8 @@
 #include <typeinfo>
 
 #include "rep/r0.h"
+#include "rep/type.h"
+#include "test.h"
 
 using namespace std;
 using namespace r0;
@@ -154,6 +156,7 @@ mv eval(const E* e, map<string, mv> vmap)
 
 mv interp(const P &p)
 {
+    vecs.clear();
     map<string, mv> map;
     return eval(p.e, map);
 }
@@ -163,11 +166,50 @@ bool test_interp(const P &p, int expect)
     mv actual = interp(p);
     if (actual.is_vector)
     {
-        cerr << "ERROR: vector as output not yet implemented\n";
+        cerr << "ERROR: got vector when expecting non-vector";
         return false;
     }
     else
     {
         return expect == actual.val;
+    }
+}
+
+static bool veceq(mv actual, vec_t expect[], int where)
+{
+    if (actual.is_vector && expect[where].t == TVEC)
+    {
+        bool status = true;
+        for (int i = 0; i < expect[where].val; i++)
+        {
+            vector<mv> cur = vecs.at(actual.val);
+            if (cur.at(i).is_vector)
+            {
+                status &= veceq(cur.at(i), expect, where+i+1);
+            }
+            else
+            {
+                status &= cur.at(i).val == expect[where+i+1].val;
+            }
+        }
+        return status;
+    }
+    else
+    {
+        cerr << "ERROR: got a vector, expected non-vector";
+        return false;
+    }
+}
+
+bool test_interp(const P &p, vec_t expect[])
+{
+    mv actual = interp(p);
+    if (!actual.is_vector)
+    {
+        return test_interp(p, expect[0].val);
+    }
+    else
+    {
+        return veceq(actual, expect, 0);
     }
 }
