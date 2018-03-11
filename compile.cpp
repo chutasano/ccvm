@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define RUNTIME /home/csano/lang/runtime/
+//#define RUNTIME /home/cs/lang/runtime/
 #define STR(a) _STR(a)
 #define _STR(a) #a
 
@@ -49,7 +49,7 @@ string compile(r0::P &p)
     write(fd, (void*)woof.c_str(), woof.size());
     string name = string(namebuf) + ".s";
     // FIXME make dynamic
-    string runtime = STR(RUNTIME) "/lib.o";
+    string runtime = STR(RUNTIME) "lib.o";
     rename(namebuf, name.c_str());
     if ((pid = fork()) == -1)
     {
