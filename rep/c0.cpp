@@ -15,6 +15,11 @@ x0s::Arg* Var::to_arg()
     return new x0s::Var(this->name);
 }
 
+x0s::Arg* GlobalVar::to_arg()
+{
+    return new x0s::Global(this->name);
+}
+
 x0s::Arg* Num::to_arg()
 {
     return new x0s::Con(this->value);
@@ -81,15 +86,27 @@ list<x0s::I*> Unop::select(x0s::Var* var)
         default:
             std::cout << "WARN: unknown unary operator: " << this->op << "\n";
             return { };
+    };
+}
+
+list<x0s::I*> FunCall::select(x0s::Var* var)
+{
+    list<x0s::Arg*> x0sargs;
+    for (auto a : args)
+    {
+        x0sargs.push_back(a->to_arg());
     }
+    return { new x0s::ICall(name, x0sargs, var) };
 }
 
 list<x0s::I*> Alloc::select(x0s::Var* var)
 {
-    return { new x0s::ISrcDst(LEAQ, new x0s::Global(type2name(tag)), 
+    int total_size = 8*(1+size);
+    return { 
+             new x0s::ISrcDst(LEAQ, new x0s::Global(type2name(tag)), 
                       new x0s::Deref(new x0s::Reg("r15"), 0)),
              new x0s::ISrcDst(MOVQ, new x0s::Reg("r15"), var),
-             new x0s::ISrcDst(ADDQ, new x0s::Con(8*(1+size)), new x0s::Reg("r15")) };
+             new x0s::ISrcDst(ADDQ, new x0s::Con(total_size), new x0s::Reg("r15")) };
 }
 
 list<x0s::I*> VecRef::select(x0s::Var* var)

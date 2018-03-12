@@ -345,6 +345,90 @@ int Var::t_check(unordered_map<string, int> vmap)
     return t;
 }
 
+GlobalVar* GlobalVar::clone() const
+{
+    return new GlobalVar(this->name);
+}
+
+void GlobalVar::uniquify(unordered_map<string, string> m)
+{
+}
+
+c0::Arg* GlobalVar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+{
+    return new c0::GlobalVar(this->name);
+}
+
+int GlobalVar::t_check(unordered_map<string, int> vmap)
+{
+    if (t == TUNKNOWN)
+    {
+        t = TNUM;
+    }
+    return t;
+}
+
+Call* Call::clone() const
+{
+    list<E*> ecopy;
+    for (E* e : args)
+    {
+        ecopy.push_back(e->clone());
+    }
+    return new Call(name, ecopy, static_cast<type>(t));
+}
+
+void Call::deep_delete()
+{
+    for (E* e : args)
+    {
+        e->deep_delete();
+        delete e;
+    }
+}
+
+void Call::uniquify(unordered_map<string, string> m)
+{
+    for (E* e : args)
+    {
+        e->uniquify(m);
+    }
+}
+
+c0::Arg* Call::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+{
+    string s = gensym("r0Call");
+    vars[s] = t;
+    list<c0::Arg*> c0args;
+    for (E* e : args)
+    {
+        c0args.push_back(e->to_c0(vars, stmts));
+    }
+    stmts.push_back(new c0::S(s, new c0::FunCall(name, c0args)));
+    return new c0::Var(s);
+}
+
+int Call::t_check(unordered_map<string, int> vmap)
+{
+    if (t == TUNKNOWN)
+    {
+        for (E* e : args)
+        {
+            e->t_check(vmap);
+        }
+        t = t_tentative;
+    }
+    return t;
+}
+
+E* Call::desugar()
+{
+    for (E* e : args)
+    {
+        e = e->desugar();
+    }
+    return this;
+}
 Let* Let::clone() const
 {
     return new Let(this->name, this->ve->clone(), this->be->clone());

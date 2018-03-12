@@ -30,6 +30,13 @@ namespace c0
         x0s::Arg* to_arg();
     };
 
+    struct GlobalVar : Arg
+    {
+        GlobalVar(std::string varname) { name = varname; }
+        std::string name;
+        x0s::Arg* to_arg();
+    };
+
     struct Num : Arg
     {
         Num(int64_t v) { value = v; }
@@ -71,6 +78,14 @@ namespace c0
         Unop(u_ops oper, Arg* value) : op(oper), v(value) { }
         u_ops op;
         Arg* v;
+        std::list<x0s::I*> select(x0s::Var*);
+    };
+
+    struct FunCall : E
+    {
+        FunCall(std::string name, std::list<Arg*> args) : name(name), args(args) {  }
+        std::string name;
+        std::list<Arg*> args;
         std::list<x0s::I*> select(x0s::Var*);
     };
 

@@ -185,7 +185,7 @@ x0::Arg* Deref::assign()
 
 x0::Arg* Global::assign()
 {
-    return new x0::Global(name) ;
+    return new x0::Global(name);
 }
 
 x0::Arg* Con::assign()

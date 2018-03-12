@@ -119,6 +119,37 @@ namespace r0
         E* desugar() { return this; }
     };
 
+    struct GlobalVar : E
+    {
+        GlobalVar(std::string varname) { name = varname; }
+        std::string name;
+        std::list<E*> get_childs() { return {}; }
+        void uniquify(std::unordered_map<std::string, std::string>);
+        int t_check(std::unordered_map<std::string , int>);
+        c0::Arg* to_c0(std::unordered_map<std::string, int> &vars, std::vector<c0::AS*> &stmts) const;
+        GlobalVar* clone() const;
+        void deep_delete() { }
+        E* desugar() { return this; }
+   };
+
+    struct Call : E
+    {
+        Call(std::string name, std::list<E*> ee, type t) : name(name), args(ee), t_tentative(t) { }
+        std::string name;
+        std::list<E*> args;
+        std::list<E*> get_childs() { return args; }
+        // an extra t is necessary because we use existing t to check for first
+        // initialization on type_check, so t has to remain TUNKNOWN until
+        // type_check runs at least once
+        type t_tentative;
+        void uniquify(std::unordered_map<std::string, std::string>);
+        int t_check(std::unordered_map<std::string, int>);
+        c0::Arg* to_c0(std::unordered_map<std::string, int> &vars, std::vector<c0::AS*> &stmts) const;
+        Call* clone() const;
+        void deep_delete();
+        E* desugar();
+    };
+
     struct Let : E
     {
         Let(std::string varname, E* vexp, E* bexp) : name(varname), ve(vexp), be(bexp) { }
