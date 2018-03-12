@@ -130,6 +130,13 @@ namespace x0s
         std::list<std::string> get_vars();
     };
 
+    struct ICollect : I
+    {
+        ICollect() { }
+        std::list<x0::I*> assign();
+        std::list<std::string> get_vars();
+    };
+
     struct IJmp : I
     {
         IJmp(jmp_instr ca, std::string l) : instr(ca), label(l) { }

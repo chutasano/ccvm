@@ -102,8 +102,15 @@ list<x0s::I*> FunCall::select(x0s::Var* var)
 list<x0s::I*> Alloc::select(x0s::Var* var)
 {
     int total_size = 8*(1+size);
-    return { 
-             new x0s::ISrcDst(LEAQ, new x0s::Global(type2name(tag)), 
+    // TODO abstractify this a bit more to reuse code
+    x0s::Reg* tmp = new x0s::Reg("rax");
+    return { new x0s::ISrcDst(MOVQ, new x0s::Global("_LANG_HEAP_END"), tmp),
+             new x0s::ISrcDst(SUBQ, new x0s::Con(total_size), tmp),
+             new x0s::ISrcDst(CMPQ, new x0s::Reg("r15"), tmp),
+             new x0s::IJmp(JG, var->var + "_call_collect_end"),
+             new x0s::ICollect(),
+             new x0s::ILabel(var->var + "_call_collect_end"),
+             new x0s::ISrcDst(LEAQ, new x0s::Global(type2name(tag)),
                       new x0s::Deref(new x0s::Reg("r15"), 0)),
              new x0s::ISrcDst(MOVQ, new x0s::Reg("r15"), var),
              new x0s::ISrcDst(ADDQ, new x0s::Con(total_size), new x0s::Reg("r15")) };

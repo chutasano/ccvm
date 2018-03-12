@@ -240,6 +240,11 @@ list<x0::I*> IJmp::assign()
     return { new x0::IJmp(this->instr, this->label) };
 }
 
+list <x0::I*> ICollect::assign()
+{
+    return { new x0::ISrcDst(MOVQ, new x0::Reg("rax"), new x0::Reg("rax")) };
+}
+
 list<x0::I*> ICall::assign()
 {
     static const list<string> available_regs = 
@@ -362,6 +367,11 @@ list<string> ICall::get_vars()
 }
 
 list<string> IJmp::get_vars()
+{
+    return { };
+}
+
+list <string> ICollect::get_vars()
 {
     return { };
 }
