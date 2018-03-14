@@ -14,6 +14,7 @@ using namespace std;
 using namespace x0s;
 
 //#define DEBUG
+//#define DEBUG_BUILD
 //#define DEBUG_VERB
 
 // FIXME global
@@ -242,7 +243,18 @@ list<x0::I*> IJmp::assign()
 
 list <x0::I*> ICollect::assign()
 {
-    return { new x0::ISrcDst(MOVQ, new x0::Reg("rax"), new x0::Reg("rax")) };
+    ICall call_collect("_lang_collect", { }, new Reg("r15"));
+    list<x0::I*> instrs = call_collect.assign();
+#ifdef DEBUG_BUILD
+    ICall call_dbg_1("_lang_print_num", { new Reg("rax") }, nullptr);
+    ICall call_dbg_2("_lang_print_num", { new Reg("r15") }, nullptr);
+    auto dbg1 = call_dbg_1.assign();
+    dbg1.splice(dbg1.end(), call_dbg_2.assign());
+    dbg1.splice(dbg1.end(), instrs);
+    return dbg1;
+#else
+    return instrs;
+#endif
 }
 
 list<x0::I*> ICall::assign()
@@ -264,7 +276,10 @@ list<x0::I*> ICall::assign()
         a.push_back(new x0::ISrcDst(MOVQ, (*it_pair.first)->assign(), new x0::Reg(*it_pair.second)));
     }
     a.push_back(new x0::ICall(this->label));
-    a.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rax"), static_cast<x0::Dst*>(dst->assign())));
+    if (dst != nullptr)
+    {
+        a.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rax"), static_cast<x0::Dst*>(dst->assign())));
+    }
     return a;
 }
 

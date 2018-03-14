@@ -205,8 +205,11 @@ void* _lang_init_rootstack(int64_t rootstack_size)
 }
 
 // returns next free ptr after stop&copy
-void* collect(void* root_stack_ptr, int64_t size)
+void* _lang_collect(void* root_stack_ptr, int64_t size)
 {
+    printf("COLLECT called\n");
     // for now just allocate more space
-    return malloc(sizeof(int64_t)*1000);
+    void* new_addr =  malloc(sizeof(int64_t)*512);
+    _LANG_HEAP_END = new_addr + heapsize;
+    return new_addr;
 }

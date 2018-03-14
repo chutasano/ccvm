@@ -422,7 +422,7 @@ void test_all()
             vec_t(TNUM, -1),
             vec_t(TBOOL, TB_FALSE)
         };
-        t(vs, vs_expect);
+        t(vs, vs_expect, 128);
     }
 
     cout << "Total tests failed: " << fails << endl;
