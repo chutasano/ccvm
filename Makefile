@@ -8,10 +8,13 @@ ABSPATH=$(patsubst %/,%,$(dir $(abspath $(lastword $(MAKEFILE_LIST)))))
 
 VPATH = rep
 
-all: $(SOURCES) compile.o $(EXECUTABLE)
+all: $(SOURCES) helper_lib compile.o $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(LDFLAGS) $(OBJECTS) -o $@
+
+helper_lib: runtime/lib.c
+	cd runtime && make && cd ..
 
 compile.o: compile.cpp compile.h
 	$(CC) $(CFLAGS) -DRUNTIME=$(ABSPATH)/runtime/ $< -o $@
