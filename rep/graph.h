@@ -34,6 +34,12 @@ enum assign_mode
     ASG_GCOLOR
 };
 
+enum stack_e
+{
+    STACK,
+    ROOTSTACK
+};
+
 
 namespace Graph
 {
@@ -74,13 +80,16 @@ struct Saturation
 
 struct Node
 {
-    Node(std::string s) : name(s), n(-1) { }
-    void constrain(unsigned int constraint)
+    Node(std::string s, stack_e stack_id) : name(s), n(-1), id(stack_id) { }
+    void constrain(unsigned int constraint, stack_e constrainee_id, unsigned int reg_count)
     {
 #ifdef DEBUG
         std::cout << name << " constraint: " << constraint << std::endl;
 #endif
-        this->saturation.insert(constraint);
+        if (constraint < reg_count || constrainee_id == id)
+        {
+            this->saturation.insert(constraint);
+        }
     }
     unsigned int assign()
     {
@@ -89,9 +98,25 @@ struct Node
         return best;
     }
     // NOTE only use for naive methods
-    void force(unsigned int v)
+    void force(unsigned int v, unsigned int offset)
     {
-        this->n = v;
+        static int rootstack_count = 0;
+        // FIXME this implies force at v = 0 should reset rootstack_count
+        // it works for how I'm using it but if force were to be used to say
+        // force register usage (similar to the register keyword in c), it'll break
+        // things
+        if (v == 0)
+        {
+            rootstack_count = 0;
+        }
+        if (id == STACK)
+        {
+            this->n = v + offset;
+        }
+        else
+        {
+            this->n = rootstack_count++;
+        }
     }
     std::pair<std::string, unsigned int> get_mapping()
     {
@@ -127,6 +152,8 @@ struct Node
 
     std::string name;
     int n; // lower = register
+    stack_e id;
+    // awk way to ensure rootstack starts at 0 on force
     Saturation saturation;
     std::list<Node*> neighbors;
 };
@@ -150,9 +177,11 @@ struct NodeList
         }
     }
 
-    void add_node(std::string a)
+    // stack_id abstractifies the rootstack vs normal stack
+    // registers are shared, but stack is not
+    void add_node(std::string a, stack_e stack_id)
     {
-        m[a] = new Node(a);
+        m[a] = new Node(a, stack_id);
     }
     void add_edges(std::string src, std::list<std::string> dsts)
     {
@@ -173,10 +202,10 @@ struct NodeList
     }
     void do_naive(int num_reg)
     {
-        int i = num_reg;
+        int i = 0;
         for (auto p : m)
         {
-            p.second->force(i++);
+            p.second->force(i++, num_reg);
         }
     }
     void do_naive2(int num_reg)
@@ -184,10 +213,10 @@ struct NodeList
         int i = 0;
         for (auto p : m)
         {
-            p.second->force(i++);
+            p.second->force(i++, 0);
         }
     }
-    void do_smart(int num_reg)
+    void do_smart(unsigned int num_reg)
     {
         std::priority_queue<Node*, std::vector<Node*>, node_strict_less > pq;
         for (auto p : m)
@@ -207,7 +236,7 @@ struct NodeList
                 unsigned int v = top->assign();
                 for (Node* n : top->neighbors)
                 {
-                    n->constrain(v);
+                    n->constrain(v, top->id, num_reg);
                 }
             }
             else

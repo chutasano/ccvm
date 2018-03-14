@@ -28,7 +28,7 @@ static const vector<string> regs
     "r14",
 };
 
-const assign_mode a_mode = ASG_SMART;
+const assign_mode a_mode = ASG_NAIVE;
 
 x0::P P::assign()
 {
@@ -36,7 +36,7 @@ x0::P P::assign()
     // generate nodes
     for (auto s : vars)
     {
-        in.add_node(s.first);
+        in.add_node(s.first, (s.second > TVEC) ? ROOTSTACK : STACK);
     }
     // get lifetime of all vars
     unordered_map<string, pair<int, int> > lifetime;
@@ -96,28 +96,39 @@ x0::P P::assign()
         cout << p.first << " : " << p.second << endl;
     }
 #endif
-    unsigned int worst = 0;
+    unsigned int worst_stack = 0;
+    unsigned int worst_rootstack = 0;
     for (auto p : vmap)
     {
-        if (p.second > worst)
+        if (vars.at(p.first) < TVEC)
         {
-            worst = p.second;
+            if (p.second > worst_stack)
+            {
+                worst_stack = p.second;
+            }
+        }
+        else if (vars.at(p.first) > TVEC)
+        {
+            if (p.second > worst_rootstack)
+            {
+                worst_rootstack = p.second;
+            }
         }
     }
     list<x0::I*> ins;
     ins.push_back(new x0::ILabel("main"));
     int total_offset;
     int64_t root_stack_size = 1;
-    bool need_stack = worst >= regs.size();
+    bool need_stack = worst_stack >= regs.size();
     ins.push_back(new x0::ICall("_lang_debug"));
     if (need_stack)
     {
-        total_offset = 8*(worst - regs.size() + 1);
+        total_offset = 8*(worst_stack - regs.size() + 1);
         ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     }
-    if (root_stack_size > 0)
+    if (worst_rootstack > 0)
     {
-        ICall a("_lang_init_rootstack", { new Con(root_stack_size)}, new Reg("r11"));
+        ICall a("_lang_init_rootstack", { new Con((int)worst_rootstack)}, new Reg("r11"));
         ins.splice(ins.end(), a.assign());
     }
     for (auto iptr : this->instr)
