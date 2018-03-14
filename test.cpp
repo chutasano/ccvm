@@ -112,9 +112,9 @@ static void ts(string name)
 
 static int fails = 0;
 
-static void t(r0::E* e, vec_t expect[])
+static void t(r0::E* e, vec_t expect[], int heap_size = 2048)
 {
-    r0::P p(e);
+    r0::P p(e, heap_size);
     p.desugar();
     if (testfunc(p, expect))
     {
@@ -134,9 +134,9 @@ static void t(r0::E* e, int expect)
 }
 
 // test for uniqueness and uniquify
-static void tu(r0::E* e, bool unique)
+static void tu(r0::E* e, bool unique, int heap_size=2048)
 {
-    r0::P a(e);
+    r0::P a(e, heap_size);
     r0::P p(a); 
     if (p.is_unique() && unique)
     {
@@ -166,9 +166,9 @@ static void tu(r0::E* e, bool unique)
 }
 
 // test for typechecker
-static void tt(r0::E* e, int expect)
+static void tt(r0::E* e, int expect, int heap_size=2048)
 {
-    r0::P a(e);
+    r0::P a(e, heap_size);
     r0::P p(a); // copy P because typecheck modifies type field
     p.type_check();
     int ty = p.t;

@@ -190,7 +190,7 @@ list<x0s::I*> If::select()
 x0s::P P::select()
 {
     list<x0s::I*> instrs;
-    instrs.push_back(new x0s::ICall("_lang_init_heap", { new x0s::Con(512) }, 
+    instrs.push_back(new x0s::ICall("_lang_init_heap", { new x0s::Con(heap_size) }, 
                                      new x0s::Reg("r15")));
     for (auto s : this->stmts)
     {

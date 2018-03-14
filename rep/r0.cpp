@@ -50,9 +50,24 @@ string gensym(string sym, bool reset = false)
     return sym + "_" + to_string(id);
 }
 
+P::P(E* ee, int heap_s) : e(ee)
+{
+    if (heap_s%8 != 0 || heap_s < 0)
+    {
+        cerr << "ERROR: invalid heap_size: " << heap_s << endl;
+        cerr << "using default heapsize of 2048\n";
+        heap_size = 2048;
+    }
+    else
+    {
+        heap_size = heap_s;
+    }
+}
+
 P::P(const P &obj)
 {
     this->e = obj.e->clone();
+    this->heap_size = obj.heap_size;
 }
 
 void P::deep_delete()
@@ -101,7 +116,7 @@ c0::P P::flatten() const
         cerr << "Type check failed";
         exit(1);
     }
-    return c0::P(vars, stmts, a, t);
+    return c0::P(vars, stmts, a, t, heap_size);
 }
 
 void P::type_check()

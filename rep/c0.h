@@ -139,10 +139,11 @@ namespace c0
 
     struct P
     {
-        P(std::unordered_map<std::string, int> v, std::vector<AS*> s, Arg* a, int ty) : vars(v), stmts(s), arg(a), t(ty) { }
+        P(std::unordered_map<std::string, int> v, std::vector<AS*> s, Arg* a, int ty, int heap_size) : vars(v), stmts(s), arg(a), heap_size(heap_size), t(ty)  { }
         std::unordered_map<std::string, int> vars;
         std::vector<AS*> stmts;
         Arg* arg; //ret
+        int heap_size;
         int t;
         x0s::P select();
     };

@@ -27,9 +27,10 @@ namespace r0
 
     struct P
     {
-        P(E* ee) : e(ee) { }
+        P(E* ee, int heap_s);
         P(const P &obj);
         E* e;
+        int heap_size;
         int t;
         void deep_delete();
         bool is_unique() const;
