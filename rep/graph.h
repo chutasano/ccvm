@@ -115,16 +115,16 @@ struct Node
         }
         else
         {
-            this->n = rootstack_count++;
+            this->n = offset + rootstack_count++;
         }
     }
-    std::pair<std::string, unsigned int> get_mapping()
+    std::pair<std::string, std::pair<unsigned int, stack_e> > get_mapping()
     {
         if (n == -1)
         {
             std::cerr << "Error trying to get mapping on an unassigned node\n";
         }
-        return std::make_pair(this->name, this->n);
+        return std::make_pair(this->name, std::make_pair(this->n, this->id));
     }
     // note: only directed, it is caller's responsibility to make sure both nodes get called
     void add_neighbor(Node* n)
@@ -191,9 +191,9 @@ struct NodeList
             m.at(d)->add_neighbor(m.at(src));
         }
     }
-    std::unordered_map<std::string, unsigned int> get_mapping()
+    std::unordered_map<std::string, std::pair<unsigned int, stack_e> > get_mapping()
     {
-        std::unordered_map<std::string, unsigned int> varmap;
+        std::unordered_map<std::string, std::pair<unsigned int, stack_e> > varmap;
         for (auto p : m)
         {
             varmap.insert(p.second->get_mapping());

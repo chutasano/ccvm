@@ -13,12 +13,10 @@
 using namespace std;
 using namespace x0s;
 
-//#define DEBUG
+#define DEBUG
 //#define DEBUG_BUILD
 //#define DEBUG_VERB
 
-// FIXME global
-unordered_map<string, unsigned int> vmap;
 
 static const vector<string> regs
 {
@@ -89,11 +87,25 @@ x0::P P::assign()
     }
 
     in.assign(regs.size(), a_mode);
-    vmap = in.get_mapping();
+    s2vmap vmap = in.get_mapping();
 #ifdef DEBUG
     for (auto p : vmap)
     {
-        cout << p.first << " : " << p.second << endl;
+        cout << p.first << ", ";
+        if (p.second.second == STACK)
+        {
+            cout << "stack";
+        }
+        else if (p.second.second == ROOTSTACK)
+        {
+            cout << "rootstack";
+        }
+        else
+        {
+            cout << "WTF?";
+            exit(1);
+        }
+        cout << " : " << p.second.first << endl;
     }
 #endif
     unsigned int worst_stack = 0;
@@ -102,23 +114,22 @@ x0::P P::assign()
     {
         if (vars.at(p.first) < TVEC)
         {
-            if (p.second > worst_stack)
+            if (p.second.first > worst_stack)
             {
-                worst_stack = p.second;
+                worst_stack = p.second.first;
             }
         }
         else if (vars.at(p.first) > TVEC)
         {
-            if (p.second > worst_rootstack)
+            if (p.second.first > worst_rootstack)
             {
-                worst_rootstack = p.second;
+                worst_rootstack = p.second.first;
             }
         }
     }
     list<x0::I*> ins;
     ins.push_back(new x0::ILabel("main"));
     int total_offset;
-    int64_t root_stack_size = 1;
     bool need_stack = worst_stack >= regs.size();
     ins.push_back(new x0::ICall("_lang_debug"));
     if (need_stack)
@@ -126,10 +137,10 @@ x0::P P::assign()
         total_offset = 8*(worst_stack - regs.size() + 1);
         ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     }
-    if (worst_rootstack > 0)
+    if (worst_rootstack >= regs.size())
     {
-        ICall a("_lang_init_rootstack", { new Con((int)worst_rootstack)}, new Reg("r11"));
-        ins.splice(ins.end(), a.assign());
+        ICall a("_lang_init_rootstack", { new Con(8*(worst_rootstack - regs.size() + 1))}, new Reg("r11"));
+        ins.splice(ins.end(), a.assign(vmap));
     }
     for (auto iptr : this->instr)
     {
@@ -137,7 +148,7 @@ x0::P P::assign()
         if (typeid(*iptr) == typeid(IRet))
         {
             auto r = static_cast<IRet*>(iptr);
-            ins.push_back(new x0::ISrcDst(MOVQ, r->arg->assign(), new x0::Reg("rax")));
+            ins.push_back(new x0::ISrcDst(MOVQ, r->arg->assign(vmap), new x0::Reg("rax")));
             if (need_stack)
             {
                 ins.push_back(new x0::ISrcDst(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
@@ -148,7 +159,7 @@ x0::P P::assign()
         }
         else
         {
-            ins.splice(ins.end(), iptr->assign());
+            ins.splice(ins.end(), iptr->assign(vmap));
         }
     }
     list<x0::Tag> tags;
@@ -167,100 +178,112 @@ x0::P P::assign()
     return x0::P(ins, tags);
 }
 
-x0::Arg* Reg::assign()
+x0::Arg* Reg::assign(s2vmap vmap)
 {
     return new x0::Reg(this->name);
 }
 
-x0::Arg* Reg8::assign()
+x0::Arg* Reg8::assign(s2vmap vmap)
 {
     return new x0::Reg8(this->name);
 }
 
-x0::Arg* Var::assign()
+x0::Arg* Var::assign(s2vmap vmap)
 {
     string v = this->var;
-    if (vmap[v] < regs.size())
+    if (vmap[v].first < regs.size())
     {
-        return new x0::Reg(regs.at(vmap[v]));
+        return new x0::Reg(regs.at(vmap[v].first));
     }
     else
     {
-        return new x0::Mem("rsp", -8*(vmap[v]-regs.size()));
+        if (vmap[v].second == STACK)
+        {
+            return new x0::Mem("rsp", -8*(vmap[v].first-regs.size()));
+        }
+        else if (vmap[v].second == ROOTSTACK)
+        {
+            return new x0::Mem("r11", 8*(vmap[v].first-regs.size()));
+        }
+        else
+        {
+            cerr << "Var::assign, WTF?";
+            exit(1);
+        }
     }
 }
 
-x0::Arg* Deref::assign()
+x0::Arg* Deref::assign(s2vmap vmap)
 {
     return new x0::Mem(reg->name, offset);
 }
 
-x0::Arg* Global::assign()
+x0::Arg* Global::assign(s2vmap vmap)
 {
     return new x0::Global(name);
 }
 
-x0::Arg* Con::assign()
+x0::Arg* Con::assign(s2vmap vmap)
 {
     return new x0::Con(this->val);
 }
 
-list<x0::I*> INoArg::assign()
+list<x0::I*> INoArg::assign(s2vmap vmap)
 {
     return { new x0::INoArg(this->instr) };
 }
 
-list<x0::I*> ISrc::assign()
+list<x0::I*> ISrc::assign(s2vmap vmap)
 {
-    return { new x0::ISrc(this->instr, this->src->assign())};
+    return { new x0::ISrc(this->instr, this->src->assign(vmap))};
 }
-list<x0::I*> IDst::assign()
+list<x0::I*> IDst::assign(s2vmap vmap)
 {
-    x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign());
+    x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign(vmap));
     return { new x0::IDst(this->instr, d) };
 }
-list<x0::I*> ISrcDst::assign()
+list<x0::I*> ISrcDst::assign(s2vmap vmap)
 {
-    x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign());
-    return { new x0::ISrcDst(this->instr, this->src->assign(), d) };
+    x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign(vmap));
+    return { new x0::ISrcDst(this->instr, this->src->assign(vmap), d) };
 }
-list<x0::I*> ISrcSrc::assign()
+list<x0::I*> ISrcSrc::assign(s2vmap vmap)
 {
-    return { new x0::ISrcSrc(this->instr, this->src->assign(), this->src2->assign()) };
+    return { new x0::ISrcSrc(this->instr, this->src->assign(vmap), this->src2->assign(vmap)) };
 }
 
-list<x0::I*> IIf::assign()
+list<x0::I*> IIf::assign(s2vmap vmap)
 {
     list<x0::I*> ins;
     for (I* i : ifi)
     {
-        ins.splice(ins.end(), i->assign());
+        ins.splice(ins.end(), i->assign(vmap));
     }
     for (I* i : elsei)
     {
-        ins.splice(ins.end(), i->assign());
+        ins.splice(ins.end(), i->assign(vmap));
     }
     for (I* i : theni)
     {
-        ins.splice(ins.end(), i->assign());
+        ins.splice(ins.end(), i->assign(vmap));
     }
     return ins;
 }
 
-list<x0::I*> IJmp::assign()
+list<x0::I*> IJmp::assign(s2vmap vmap)
 {
     return { new x0::IJmp(this->instr, this->label) };
 }
 
-list <x0::I*> ICollect::assign()
+list <x0::I*> ICollect::assign(s2vmap vmap)
 {
     ICall call_collect("_lang_collect", { }, new Reg("r15"));
-    list<x0::I*> instrs = call_collect.assign();
+    list<x0::I*> instrs = call_collect.assign(vmap);
 #ifdef DEBUG_BUILD
     ICall call_dbg_1("_lang_print_num", { new Reg("rax") }, nullptr);
     ICall call_dbg_2("_lang_print_num", { new Reg("r15") }, nullptr);
-    auto dbg1 = call_dbg_1.assign();
-    dbg1.splice(dbg1.end(), call_dbg_2.assign());
+    auto dbg1 = call_dbg_1.assign(vmap);
+    dbg1.splice(dbg1.end(), call_dbg_2.assign(vmap));
     dbg1.splice(dbg1.end(), instrs);
     return dbg1;
 #else
@@ -268,7 +291,7 @@ list <x0::I*> ICollect::assign()
 #endif
 }
 
-list<x0::I*> ICall::assign()
+list<x0::I*> ICall::assign(s2vmap vmap)
 {
     static const list<string> available_regs = 
     {
@@ -284,22 +307,22 @@ list<x0::I*> ICall::assign()
             it_pair.first != args.end();
             ++it_pair.first, ++it_pair.second)
     {
-        a.push_back(new x0::ISrcDst(MOVQ, (*it_pair.first)->assign(), new x0::Reg(*it_pair.second)));
+        a.push_back(new x0::ISrcDst(MOVQ, (*it_pair.first)->assign(vmap), new x0::Reg(*it_pair.second)));
     }
     a.push_back(new x0::ICall(this->label));
     if (dst != nullptr)
     {
-        a.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rax"), static_cast<x0::Dst*>(dst->assign())));
+        a.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rax"), static_cast<x0::Dst*>(dst->assign(vmap))));
     }
     return a;
 }
 
-list<x0::I*> ILabel::assign()
+list<x0::I*> ILabel::assign(s2vmap vmap)
 {
     return { new x0::ILabel(this->name) };
 }
 
-list<x0::I*> IRet::assign()
+list<x0::I*> IRet::assign(s2vmap vmap)
 {
     // TODO fix
     return { new x0::IRet(TBOOL) };
