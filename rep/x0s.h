@@ -11,6 +11,7 @@ namespace x0s
 {
     struct Arg
     {
+        virtual ~Arg() {  }
         virtual x0::Arg* assign() = 0;
     };
 
@@ -46,6 +47,7 @@ namespace x0s
     struct Deref : Dst
     {
         Deref(Reg* r, int offset) : reg(r), offset(offset) { }
+        ~Deref() { delete reg; }
         Reg* reg;
         int offset;
         x0::Arg* assign();
@@ -68,6 +70,7 @@ namespace x0s
     // base class for X0 instructions
     struct I
     {
+        virtual ~I() { }
         virtual std::list<x0::I*> assign() = 0;
         virtual std::list<std::string> get_vars() = 0;
     };
@@ -83,6 +86,7 @@ namespace x0s
     struct ISrc : I
     {
         ISrc(src_instr i, Arg* s) : instr(i), src(s) { }
+        ~ISrc() { delete src; }
         src_instr instr;
         Arg* src;
         std::list<x0::I*> assign();
@@ -92,6 +96,7 @@ namespace x0s
     struct IDst : I
     {
         IDst(dst_instr i, Dst* d) : instr(i), dst(d) { }
+        ~IDst() { delete dst; }
         dst_instr instr;
         Dst* dst;
         std::list<x0::I*> assign();
@@ -101,6 +106,8 @@ namespace x0s
     struct ISrcDst : I
     {
         ISrcDst(src_dst_instr i, Arg* s, Dst* d) : instr(i), src(s), dst(d) { }
+        // FIXME (try a maybe delete implementation)
+        //~ISrcDst() { delete src; delete dst; }
         src_dst_instr instr;
         Arg* src;
         Dst* dst;
@@ -111,6 +118,7 @@ namespace x0s
     struct ISrcSrc : I
     {
         ISrcSrc(src_src_instr i, Arg* s, Arg* s2) : instr(i), src(s), src2(s2) { }
+        ~ISrcSrc() { delete src; delete src2; }
         src_src_instr instr;
         Arg* src;
         Arg* src2;
@@ -122,6 +130,7 @@ namespace x0s
     struct IIf : I
     {
         IIf(std::list<I*> iif, std::list<I*> ithen, std::list<I*> ielse) : ifi(iif), theni(ithen), elsei(ielse) { }
+        ~IIf() { for (auto i : ifi) delete i; for (auto i : theni) delete i; for (auto i : elsei) delete i; }
         // don't need to abstract conditions here
         std::list<I*> ifi;
         std::list<I*> theni;
@@ -150,6 +159,7 @@ namespace x0s
     struct ICall : I
     {
         ICall(std::string l, std::list<Arg*> args, Dst* dst) : label(l), args(args), dst(dst) { }
+        ~ICall() { for (auto a : args) {delete a;} delete dst; }
         std::string label;
         std::list<Arg*> args;
         Dst* dst;
@@ -167,6 +177,7 @@ namespace x0s
     struct IRet : I
     {
         IRet(Arg* a) : arg(a) { }
+        ~IRet() { delete arg; }
         Arg* arg;
         std::list<x0::I*> assign();
         std::list<std::string> get_vars();
@@ -176,6 +187,7 @@ namespace x0s
     struct P
     {
         P(std::list<I*> i, std::unordered_map<std::string, int> v, int t) : instr(i), vars(v), t(t) { }
+        ~P() { for (auto i : instr) delete i; }
         std::list<I*> instr;
         std::unordered_map<std::string, int> vars;
         int t;
