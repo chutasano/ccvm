@@ -127,10 +127,10 @@ static void t(r0::E* e, vec_t expect[], int heap_size = 2048)
     }
 }
 
-static void t(r0::E* e, int expect)
+static void t(r0::E* e, int expect, int heap_size=2048)
 {
     vec_t woof[] = { vec_t(TNUM, expect) };
-    t(e, woof);
+    t(e, woof, heap_size);
 }
 
 // test for uniqueness and uniquify
@@ -423,6 +423,28 @@ void test_all()
             vec_t(TBOOL, TB_FALSE)
         };
         t(vs, vs_expect, 128);
+    }
+
+    ts("Lots of active vectors");
+    {
+        UPTR(r0::Vector, v1, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v2, { n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v3, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v4, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v5, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, v6, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::VectorRef, vr1, v1, 0);
+        UPTR(r0::VectorRef, vr2, v2, 0);
+        UPTR(r0::VectorRef, vr3, v3, 0);
+        UPTR(r0::VectorRef, vr4, v4, 0);
+        UPTR(r0::VectorRef, vr5, v5, 0);
+        UPTR(r0::VectorRef, vr6, v6, 0);
+        PLUS(vr1, vr2);
+        PLUS(bplus_vr1_vr2, vr3);
+        PLUS(vr4, vr5);
+        PLUS(bplus_vr4_vr5, vr6);
+        PLUS(bplus_bplus_vr1_vr2_vr3, bplus_bplus_vr4_vr5_vr6);
+        t(bplus_bplus_bplus_vr1_vr2_vr3_bplus_bplus_vr4_vr5_vr6, 73, 128);
     }
 
     cout << "Total tests failed: " << fails << endl;

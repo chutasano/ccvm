@@ -201,13 +201,15 @@ void _lang_print_vec(int64_t* start)
 
 void* _lang_init_rootstack(int64_t rootstack_size)
 {
-    return malloc(sizeof(int64_t)*rootstack_size);
+    void* roar =  malloc(sizeof(int64_t)*rootstack_size);
+    printf("ROOTSTACK_ADDR: %ld\n", roar);
+    return roar;
 }
 
 // returns next free ptr after stop&copy
 void* _lang_collect(void* root_stack_ptr, int64_t size)
 {
-    printf("COLLECT called\n");
+    printf("COLLECT called with RSP=%ld, size=%ld\n", root_stack_ptr, size);
     // for now just allocate more space
     void* new_addr =  malloc(sizeof(int64_t)*512);
     _LANG_HEAP_END = new_addr + heapsize;

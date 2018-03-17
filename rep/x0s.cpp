@@ -13,7 +13,7 @@
 using namespace std;
 using namespace x0s;
 
-#define DEBUG
+//#define DEBUG
 //#define DEBUG_BUILD
 //#define DEBUG_VERB
 
@@ -21,12 +21,11 @@ using namespace x0s;
 static const vector<string> regs
 {
     "rbx",
-    "r12",
     "r13",
     "r14",
 };
 
-const assign_mode a_mode = ASG_NAIVE;
+const assign_mode a_mode = ASG_SMART;
 
 x0::P P::assign()
 {
@@ -41,6 +40,7 @@ x0::P P::assign()
         
     int i = 1; // let i start at 1 to exploit the default constructor
                // of std::pair to check for initial existance
+    vector<pair<ICollect*, int> > collects;
     for (auto iptr : this->instr)
     {
         const auto &slist = iptr->get_vars();
@@ -55,6 +55,10 @@ x0::P P::assign()
             {
                 lifetime[s] = make_pair(entry.first, i);
             }
+        }
+        if (typeid(*iptr) == typeid(ICollect))
+        {
+            collects.push_back(make_pair(static_cast<ICollect*>(iptr), i));
         }
         i++;
     }
@@ -84,6 +88,19 @@ x0::P P::assign()
             }
         }
         in.add_edges(it->first, local_interf);
+        if (vars.at(it->first) > TVEC)
+        {
+            for (pair<ICollect*, int> p : collects)
+            {
+                if (p.second <= max && p.second >= min)
+                {
+#ifdef DEBUG
+                    cout << "Vec: " << it->first << " is live at collect call at " << p.second << endl;
+#endif
+                    p.first->live_references.push_back(new Var(it->first));
+                }
+            }
+        }
     }
 
     in.assign(regs.size(), a_mode);
@@ -139,8 +156,9 @@ x0::P P::assign()
     }
     if (worst_rootstack >= regs.size())
     {
-        ICall a("_lang_init_rootstack", { new Con(8*(worst_rootstack - regs.size() + 1))}, new Reg("r11"));
+        ICall a("_lang_init_rootstack", { new Con((worst_rootstack - regs.size() + 1))}, new Reg("r12"));
         ins.splice(ins.end(), a.assign(vmap));
+        //ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(8*(worst_rootstack - regs.size() + 1)), new x0::Reg("r12")));
     }
     for (auto iptr : this->instr)
     {
@@ -178,32 +196,32 @@ x0::P P::assign()
     return x0::P(ins, tags);
 }
 
-x0::Arg* Reg::assign(s2vmap vmap)
+x0::Arg* Reg::assign(const s2vmap &vmap)
 {
     return new x0::Reg(this->name);
 }
 
-x0::Arg* Reg8::assign(s2vmap vmap)
+x0::Arg* Reg8::assign(const s2vmap &vmap)
 {
     return new x0::Reg8(this->name);
 }
 
-x0::Arg* Var::assign(s2vmap vmap)
+x0::Arg* Var::assign(const s2vmap &vmap)
 {
     string v = this->var;
-    if (vmap[v].first < regs.size())
+    if (vmap.at(v).first < regs.size())
     {
-        return new x0::Reg(regs.at(vmap[v].first));
+        return new x0::Reg(regs.at(vmap.at(v).first));
     }
     else
     {
-        if (vmap[v].second == STACK)
+        if (vmap.at(v).second == STACK)
         {
-            return new x0::Mem("rsp", -8*(vmap[v].first-regs.size()));
+            return new x0::Mem("rsp", -8*(vmap.at(v).first-regs.size()));
         }
-        else if (vmap[v].second == ROOTSTACK)
+        else if (vmap.at(v).second == ROOTSTACK)
         {
-            return new x0::Mem("r11", 8*(vmap[v].first-regs.size()));
+            return new x0::Mem("r12", 8*(vmap.at(v).first-regs.size()));
         }
         else
         {
@@ -213,46 +231,46 @@ x0::Arg* Var::assign(s2vmap vmap)
     }
 }
 
-x0::Arg* Deref::assign(s2vmap vmap)
+x0::Arg* Deref::assign(const s2vmap &vmap)
 {
     return new x0::Mem(reg->name, offset);
 }
 
-x0::Arg* Global::assign(s2vmap vmap)
+x0::Arg* Global::assign(const s2vmap &vmap)
 {
     return new x0::Global(name);
 }
 
-x0::Arg* Con::assign(s2vmap vmap)
+x0::Arg* Con::assign(const s2vmap &vmap)
 {
     return new x0::Con(this->val);
 }
 
-list<x0::I*> INoArg::assign(s2vmap vmap)
+list<x0::I*> INoArg::assign(const s2vmap &vmap)
 {
     return { new x0::INoArg(this->instr) };
 }
 
-list<x0::I*> ISrc::assign(s2vmap vmap)
+list<x0::I*> ISrc::assign(const s2vmap &vmap)
 {
     return { new x0::ISrc(this->instr, this->src->assign(vmap))};
 }
-list<x0::I*> IDst::assign(s2vmap vmap)
+list<x0::I*> IDst::assign(const s2vmap &vmap)
 {
     x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign(vmap));
     return { new x0::IDst(this->instr, d) };
 }
-list<x0::I*> ISrcDst::assign(s2vmap vmap)
+list<x0::I*> ISrcDst::assign(const s2vmap &vmap)
 {
     x0::Dst* d = static_cast<x0::Dst*>(this->dst->assign(vmap));
     return { new x0::ISrcDst(this->instr, this->src->assign(vmap), d) };
 }
-list<x0::I*> ISrcSrc::assign(s2vmap vmap)
+list<x0::I*> ISrcSrc::assign(const s2vmap &vmap)
 {
     return { new x0::ISrcSrc(this->instr, this->src->assign(vmap), this->src2->assign(vmap)) };
 }
 
-list<x0::I*> IIf::assign(s2vmap vmap)
+list<x0::I*> IIf::assign(const s2vmap &vmap)
 {
     list<x0::I*> ins;
     for (I* i : ifi)
@@ -270,15 +288,52 @@ list<x0::I*> IIf::assign(s2vmap vmap)
     return ins;
 }
 
-list<x0::I*> IJmp::assign(s2vmap vmap)
+list<x0::I*> IJmp::assign(const s2vmap &vmap)
 {
     return { new x0::IJmp(this->instr, this->label) };
 }
 
-list <x0::I*> ICollect::assign(s2vmap vmap)
+list <x0::I*> ICollect::assign(const s2vmap &vmap)
 {
-    ICall call_collect("_lang_collect", { }, new Reg("r15"));
-    list<x0::I*> instrs = call_collect.assign(vmap);
+    vector<x0::Dst*> move_refs;
+    int worst_offset = 0;
+    for (Dst* r : live_references)
+    {
+        if (typeid(*r) != typeid(Var))
+        {
+            Var* v = static_cast<Var*>(r);
+            int offs = vmap.at(v->var).first - regs.size() + 1;
+            if (offs < 0)
+            {
+                move_refs.push_back(static_cast<x0::Dst*>(v->assign(vmap)));
+            }
+            else
+            {
+                // get highest offset -> push registers on that
+                if (worst_offset < offs)
+                {
+                    worst_offset = offs;
+                }
+            }
+        }
+        else
+        {
+            cerr << "HMMMM. x0s::ICollect does not support non-var vectors for now\n";
+            exit(4);
+        }
+    }
+    list<x0::I*> instrs;
+    for (int i = 0; i < (int)move_refs.size(); i++)
+    {
+        instrs.push_back(new x0::ISrcDst(MOVQ, move_refs.at(i), new x0::Mem("r11", worst_offset+i)));
+    }
+    ICall call_collect("_lang_collect", { new Reg("r12"), new Con(worst_offset+move_refs.size()-1)}, new Reg("r15"));
+    instrs.splice(instrs.end(), call_collect.assign(vmap));
+    for (int i = 0; i < (int)move_refs.size(); i++)
+    {
+        instrs.push_back(new x0::ISrcDst(MOVQ, new x0::Mem("r11", worst_offset+i), move_refs.at(i)));
+    }
+
 #ifdef DEBUG_BUILD
     ICall call_dbg_1("_lang_print_num", { new Reg("rax") }, nullptr);
     ICall call_dbg_2("_lang_print_num", { new Reg("r15") }, nullptr);
@@ -291,7 +346,7 @@ list <x0::I*> ICollect::assign(s2vmap vmap)
 #endif
 }
 
-list<x0::I*> ICall::assign(s2vmap vmap)
+list<x0::I*> ICall::assign(const s2vmap &vmap)
 {
     static const list<string> available_regs = 
     {
@@ -317,12 +372,12 @@ list<x0::I*> ICall::assign(s2vmap vmap)
     return a;
 }
 
-list<x0::I*> ILabel::assign(s2vmap vmap)
+list<x0::I*> ILabel::assign(const s2vmap &vmap)
 {
     return { new x0::ILabel(this->name) };
 }
 
-list<x0::I*> IRet::assign(s2vmap vmap)
+list<x0::I*> IRet::assign(const s2vmap &vmap)
 {
     // TODO fix
     return { new x0::IRet(TBOOL) };

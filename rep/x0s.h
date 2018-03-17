@@ -14,7 +14,7 @@ namespace x0s
     struct Arg
     {
         virtual ~Arg() {  }
-        virtual x0::Arg* assign(s2vmap) = 0;
+        virtual x0::Arg* assign(const s2vmap&) = 0;
     };
 
     struct Dst : Arg
@@ -27,7 +27,7 @@ namespace x0s
         // the register name without the %
         // example: rax
         std::string name;
-        x0::Arg* assign(s2vmap);
+        x0::Arg* assign(const s2vmap&);
     };
 
     struct Reg8 : Dst
@@ -36,14 +36,14 @@ namespace x0s
         // the register name without the %
         // example: rax
         std::string name;
-        x0::Arg* assign(s2vmap);
+        x0::Arg* assign(const s2vmap&);
     };
 
     struct Var : Dst
     {
         Var(std::string n) : var(n) { }
         std::string var;
-        x0::Arg* assign(s2vmap);
+        x0::Arg* assign(const s2vmap&);
     };
 
     struct Deref : Dst
@@ -52,14 +52,14 @@ namespace x0s
         ~Deref() { delete reg; }
         Reg* reg;
         int offset;
-        x0::Arg* assign(s2vmap);
+        x0::Arg* assign(const s2vmap&);
     };
 
     struct Global : Dst
     {
         Global(std::string s) : name(s) { }
         std::string name;
-        x0::Arg* assign(s2vmap);
+        x0::Arg* assign(const s2vmap&);
     };
 
 
@@ -67,13 +67,13 @@ namespace x0s
     {
         Con(int64_t c) : val(c) { }
         int64_t val;
-        x0::Arg* assign(s2vmap);
+        x0::Arg* assign(const s2vmap&);
     };
     // base class for X0 instructions
     struct I
     {
         virtual ~I() { }
-        virtual std::list<x0::I*> assign(s2vmap) = 0;
+        virtual std::list<x0::I*> assign(const s2vmap&) = 0;
         virtual std::list<std::string> get_vars() = 0;
     };
 
@@ -81,7 +81,7 @@ namespace x0s
     {
         INoArg(no_arg_instr i) : instr(i) { }
         no_arg_instr instr;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -91,7 +91,7 @@ namespace x0s
         ~ISrc() { delete src; }
         src_instr instr;
         Arg* src;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -101,7 +101,7 @@ namespace x0s
         ~IDst() { delete dst; }
         dst_instr instr;
         Dst* dst;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -113,7 +113,7 @@ namespace x0s
         src_dst_instr instr;
         Arg* src;
         Dst* dst;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -124,7 +124,7 @@ namespace x0s
         src_src_instr instr;
         Arg* src;
         Arg* src2;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -137,14 +137,15 @@ namespace x0s
         std::list<I*> ifi;
         std::list<I*> theni;
         std::list<I*> elsei;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
     struct ICollect : I
     {
         ICollect() { }
-        std::list<x0::I*> assign(s2vmap);
+        std::list<Dst*> live_references;
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -153,7 +154,7 @@ namespace x0s
         IJmp(jmp_instr ca, std::string l) : instr(ca), label(l) { }
         jmp_instr instr;
         std::string label;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -165,7 +166,7 @@ namespace x0s
         std::string label;
         std::list<Arg*> args;
         Dst* dst;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
@@ -173,7 +174,7 @@ namespace x0s
     {
         ILabel(std::string n) : name(n) { }
         std::string name;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
     struct IRet : I
@@ -181,7 +182,7 @@ namespace x0s
         IRet(Arg* a) : arg(a) { }
         ~IRet() { delete arg; }
         Arg* arg;
-        std::list<x0::I*> assign(s2vmap);
+        std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();
     };
 
