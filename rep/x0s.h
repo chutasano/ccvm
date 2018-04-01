@@ -186,17 +186,24 @@ namespace x0s
         std::list<std::string> get_vars();
     };
 
-    // program container for X0
-    struct P
+    struct F
     {
-        P(std::list<I*> i, std::unordered_map<std::string, int> v, int t) : instr(i), vars(v), t(t) { }
-        ~P() { for (auto i : instr) delete i; }
+        F(std::string name, std::list<I*> i, std::unordered_map<std::string, int> v, int t) : name(name), instr(i), vars(v), t(t) { }
+        std::string name;
         std::list<I*> instr;
         std::unordered_map<std::string, int> vars;
         int t;
+        std::list<x0::I*> assign(bool is_default, int heap_size);
+    };
+
+    struct P
+    {
+        P(std::vector<F> funcs, std::string to_run, int heap_size) : funcs(funcs), to_run(to_run), heap_size(heap_size) {  }
+        ~P() { for (F &f : funcs) for (auto i : f.instr) delete i; }
+        std::vector<F> funcs;
+        std::string to_run;
+        int heap_size;
         x0::P assign();
-        private:
-        void interference();
     };
 
 }

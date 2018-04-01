@@ -144,16 +144,23 @@ namespace c0
         std::list<x0s::I*> select();
     };
 
-
-    struct P
+    struct F
     {
-        P(std::unordered_map<std::string, int> v, std::vector<AS*> s, Arg* a, int ty, int heap_size) : vars(v), stmts(s), arg(a), heap_size(heap_size), t(ty)  { }
-        ~P() { for (auto s : stmts) delete s; }
+        F(std::string name, std::unordered_map<std::string, int> v, std::vector<AS*> s, Arg* a, int t) : name(name), vars(v), stmts(s), arg(a), t(t)  { }
+        std::string name;
         std::unordered_map<std::string, int> vars;
         std::vector<AS*> stmts;
         Arg* arg; //ret
-        int heap_size;
         int t;
+        x0s::F select();
+   };
+
+    struct P
+    {
+        P(std::vector<F> funcs, std::string to_run, int heap_size) : funcs(funcs), to_run(to_run), heap_size(heap_size) { }
+        std::vector<F> funcs;
+        std::string to_run;
+        int heap_size;
         x0s::P select();
     };
 }

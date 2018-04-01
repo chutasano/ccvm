@@ -65,8 +65,9 @@ namespace x0
 
     struct ILabel : I
     {
-        ILabel(std::string n) : name(n) { }
+        ILabel(std::string n, bool is_global = false) : name(n), is_global(is_global){ }
         std::string name;
+        bool is_global;
         std::string to_asm();
     };
 

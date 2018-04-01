@@ -243,7 +243,7 @@ namespace r0
         bool is_unique() const;
         void uniquify();
         void type_check();
-        c0::P flatten() const;
+        c0::F flatten() const;
         void desugar();
     };
 

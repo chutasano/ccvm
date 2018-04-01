@@ -121,17 +121,12 @@ bool P::is_unique() const
 
 c0::P P::flatten() const
 {
-    // TODO
-    vector<c0::P> cs;
+    vector<c0::F> cfs;
     for (const F &f : funcs)
     {
-        //cs.push_back(f.flatten());
-        if (f.name == to_run)
-        {
-            return f.flatten();
-        }
+        cfs.push_back(f.flatten());
     }
-    exit(0);
+    return c0::P(cfs, to_run, heap_size);
 }
 
 void P::type_check()
@@ -199,7 +194,7 @@ bool F::is_unique() const
     return varnames.size() == uniquenames.size();
 }
 
-c0::P F::flatten() const
+c0::F F::flatten() const
 {
     unordered_map<string, int> vars;
     vector<c0::AS*> stmts;
@@ -209,7 +204,7 @@ c0::P F::flatten() const
         cerr << "Type check failed";
         exit(1);
     }
-    return c0::P(vars, stmts, a, t, 2048);
+    return c0::F(name, vars, stmts, a, t);
 }
 
 void F::type_check()

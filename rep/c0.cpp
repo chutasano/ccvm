@@ -187,17 +187,25 @@ list<x0s::I*> If::select()
     return { new x0s::IIf(l, theni, elsei) };
 }
 
-x0s::P P::select()
+x0s::F F::select()
 {
     list<x0s::I*> instrs;
-    instrs.push_back(new x0s::ICall("_lang_init_heap", { new x0s::Con(heap_size) }, 
-                                     new x0s::Reg("r15")));
     for (auto s : this->stmts)
     {
         list<x0s::I*> is = s->select();
         instrs.splice(instrs.end(), is);
     }
     instrs.push_back(new x0s::IRet(this->arg->to_arg()));
-    return x0s::P(instrs, vars, t);
+    return x0s::F(name, instrs, vars, t);
+}
+
+x0s::P P::select()
+{
+    vector<x0s::F> x0sfs;
+    for (F f : funcs)
+    {
+        x0sfs.push_back(f.select());
+    }
+    return x0s::P(x0sfs, to_run, heap_size);
 }
 

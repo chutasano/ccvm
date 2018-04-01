@@ -27,7 +27,7 @@ static const vector<string> regs
 
 const assign_mode a_mode = ASG_SMART;
 
-x0::P P::assign()
+list<x0::I*> F::assign(bool is_default, int heap_size)
 {
     Graph::NodeList in;
     // generate nodes
@@ -108,7 +108,7 @@ x0::P P::assign()
             }
         }
     }
-
+    list<x0::I*> ins;
     in.assign(regs.size(), a_mode);
     s2vmap vmap = in.get_mapping();
 #ifdef DEBUG
@@ -150,8 +150,12 @@ x0::P P::assign()
             }
         }
     }
-    list<x0::I*> ins;
-    ins.push_back(new x0::ILabel("main"));
+    ins.push_back(new x0::ILabel(name, true));
+    if (is_default)
+    {
+        ICall a("_lang_init_heap", { new Con(heap_size) }, new Reg("r15"));
+        ins.splice(ins.end(), a.assign(vmap));
+    }
     int total_offset;
     bool need_stack = worst_stack >= regs.size();
     ins.push_back(new x0::ICall("_lang_debug"));
@@ -185,6 +189,16 @@ x0::P P::assign()
         {
             ins.splice(ins.end(), iptr->assign(vmap));
         }
+    }
+    return ins;
+}
+
+x0::P P::assign()
+{
+    list<x0::I*> ins;
+    for (F &f : funcs)
+    {
+        ins.splice(ins.end(), f.assign(f.name == to_run, heap_size));
     }
     list<x0::Tag> tags;
     tags.push_back(x0::Tag(type2name(TNUM), TNUM));

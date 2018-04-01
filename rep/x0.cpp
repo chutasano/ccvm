@@ -22,7 +22,6 @@ string P::to_asm()
            << t.to_asm() << endl;
     }
     ss  << ".section .text" << endl;
-    ss  << ".globl main" << endl;
     for (auto i : instr)
     {
         ss << "    " << i->to_asm() << endl;
@@ -66,7 +65,13 @@ string Global::to_string()
 
 string ILabel::to_asm()
 {
-    return name + ":";
+    string ret = "";
+    if (is_global)
+    {
+        ret = "\n.globl " + name + "\n";
+    }
+    ret += name + ":";
+    return ret;
 }
 
 string INoArg::to_asm()
