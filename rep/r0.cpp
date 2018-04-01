@@ -335,7 +335,7 @@ Var* Var::clone() const
 
 void Var::uniquify(unordered_map<string, string> m)
 {
-    auto it = m.find(this->name); // FIXME const iterator will be the "right"
+    const auto &it = m.find(this->name); // FIXME const iterator will be the "right"
                                   // thing to do instead of auto
     if (it != m.end())
     {
@@ -466,7 +466,7 @@ void Let::uniquify(unordered_map<string, string> m)
 c0::Arg* Let::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
 {
     stmts.push_back(new c0::S(this->name, this->ve->to_c0(vars, stmts)));
-    vars[this->name] = t;
+    vars[this->name] = this->ve->t;
     return this->be->to_c0(vars, stmts);
 }
 

@@ -64,7 +64,6 @@ function<bool(r0::P, vec_t[])> testfunc;
 static bool both(const r0::P &p, vec_t expect[])
 {
     bool woof = test_interp(p, expect);
-    //bool meow = test_compile(p, expect[0].val);
     bool meow = test_compile(p, expect);
     if (!woof)
     {
@@ -185,10 +184,9 @@ static void tt(r0::E* e, int expect, int heap_size=2048)
 
 void test_all()
 {
-    // TODO switch to test both once compiler is implemented
     //testfunc = test_interp;
-    //testfunc = test_compile;
-    testfunc = both;
+    testfunc = test_compile;
+    //testfunc = both;
 
     cout << "Start Tests\n";
 
@@ -427,24 +425,27 @@ void test_all()
 
     ts("Lots of active vectors");
     {
-        UPTR(r0::Vector, v1, { n10, n23, nn1, bt, bf} );
-        UPTR(r0::Vector, v2, { n23, nn1, bt, bf} );
-        UPTR(r0::Vector, v3, { n10, n23, nn1, bt, bf} );
-        UPTR(r0::Vector, v4, { n10, n23, nn1, bt, bf} );
-        UPTR(r0::Vector, v5, { n10, n23, nn1, bt, bf} );
-        UPTR(r0::Vector, v6, { n10, n23, nn1, bt, bf} );
-        UPTR(r0::VectorRef, vr1, v1, 0);
-        UPTR(r0::VectorRef, vr2, v2, 0);
-        UPTR(r0::VectorRef, vr3, v3, 0);
-        UPTR(r0::VectorRef, vr4, v4, 0);
-        UPTR(r0::VectorRef, vr5, v5, 0);
-        UPTR(r0::VectorRef, vr6, v6, 0);
+        VAR(a);
+        VAR(b);
+        VAR(c);
+        UPTR(r0::Vector, _v1, { n10, n23, nn1, bt, bf} );
+        UPTR(r0::Vector, _v2, { n23, nn1, bt, bf} );
+        UPTR(r0::Vector, _v3, { nn1, n23, n10, n10, n10, n10} );
+        UPTR(r0::VectorRef, vr1, va, 0);
+        UPTR(r0::VectorRef, vr2, vb, 0);
+        UPTR(r0::VectorRef, vr3, vc, 0);
+        UPTR(r0::VectorRef, vr4, va, 0);
+        UPTR(r0::VectorRef, vr5, vb, 0);
+        UPTR(r0::VectorRef, vr6, vc, 0);
         PLUS(vr1, vr2);
         PLUS(bplus_vr1_vr2, vr3);
         PLUS(vr4, vr5);
         PLUS(bplus_vr4_vr5, vr6);
         PLUS(bplus_bplus_vr1_vr2_vr3, bplus_bplus_vr4_vr5_vr6);
-        t(bplus_bplus_bplus_vr1_vr2_vr3_bplus_bplus_vr4_vr5_vr6, 73, 128);
+        LET(v3let, c, _v3, bplus_bplus_bplus_vr1_vr2_vr3_bplus_bplus_vr4_vr5_vr6 );
+        LET(v2let, b, _v2, v3let);
+        LET(v1let, a, _v1, v2let);
+       t(v1let, 64, 128);
     }
 
     cout << "Total tests failed: " << fails << endl;

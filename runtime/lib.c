@@ -207,9 +207,24 @@ void* _lang_init_rootstack(int64_t rootstack_size)
 }
 
 // returns next free ptr after stop&copy
-void* _lang_collect(void* root_stack_ptr, int64_t size)
+void* _lang_collect(int64_t** root_stack_ptr, int64_t size)
 {
-    printf("COLLECT called with RSP=%ld, size=%ld\n", root_stack_ptr, size);
+    if (size == 0)
+    {
+        printf("COLLECT size = 0");
+    }
+    else if (debug)
+    {
+        printf("COLLECT called with RSP=%ld, size=%ld\n", root_stack_ptr, size);
+        debug = 0;
+        int i;
+        for (i = 0; i < size; i++)
+        {
+            _lang_print_vec(root_stack_ptr[i]);
+        }
+        debug = 1;
+    }
+    
     // for now just allocate more space
     void* new_addr =  malloc(sizeof(int64_t)*512);
     _LANG_HEAP_END = new_addr + heapsize;

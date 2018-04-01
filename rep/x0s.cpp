@@ -34,6 +34,9 @@ x0::P P::assign()
     for (auto s : vars)
     {
         in.add_node(s.first, (s.second > TVEC) ? ROOTSTACK : STACK);
+#ifdef DEBUG
+        cout << s.first << ":" << s.second << endl;
+#endif
     }
     // get lifetime of all vars
     unordered_map<string, pair<int, int> > lifetime;
@@ -92,6 +95,9 @@ x0::P P::assign()
         {
             for (pair<ICollect*, int> p : collects)
             {
+#ifdef DEBUG
+                cout << "vec_min, collect, vec_max: " << min << ", " << p.second << ", " << max << endl;
+#endif
                 if (p.second <= max && p.second >= min)
                 {
 #ifdef DEBUG
@@ -295,25 +301,17 @@ list<x0::I*> IJmp::assign(const s2vmap &vmap)
 
 list <x0::I*> ICollect::assign(const s2vmap &vmap)
 {
-    vector<x0::Dst*> move_refs;
-    int worst_offset = 0;
+    unsigned int worst_rootstack = 0;
+    // todo optimize this
     for (Dst* r : live_references)
     {
-        if (typeid(*r) != typeid(Var))
+        if (typeid(*r) == typeid(Var))
         {
             Var* v = static_cast<Var*>(r);
-            int offs = vmap.at(v->var).first - regs.size() + 1;
-            if (offs < 0)
+            int offs = vmap.at(v->var).first - regs.size();
+            if (offs > (int)worst_rootstack)
             {
-                move_refs.push_back(static_cast<x0::Dst*>(v->assign(vmap)));
-            }
-            else
-            {
-                // get highest offset -> push registers on that
-                if (worst_offset < offs)
-                {
-                    worst_offset = offs;
-                }
+                worst_rootstack = (unsigned int)offs;
             }
         }
         else
@@ -322,16 +320,57 @@ list <x0::I*> ICollect::assign(const s2vmap &vmap)
             exit(4);
         }
     }
-    list<x0::I*> instrs;
-    for (int i = 0; i < (int)move_refs.size(); i++)
+    vector<x0::Dst*> vec_regs;
+    vector<x0::Dst*> rstack(live_references.size() + worst_rootstack);
+    for (Dst* r : live_references)
     {
-        instrs.push_back(new x0::ISrcDst(MOVQ, move_refs.at(i), new x0::Mem("r11", worst_offset+i)));
+        if (typeid(*r) == typeid(Var))
+        {
+            Var* v = static_cast<Var*>(r);
+            int offs = vmap.at(v->var).first - regs.size();
+            if (offs < 0)
+            {
+                vec_regs.push_back(static_cast<x0::Dst*>(v->assign(vmap)));
+            }
+            else
+            {
+                rstack.at(offs) = static_cast<x0::Dst*>(v->assign(vmap));
+            }
+        }
+        else
+        {
+            cerr << "HMMMM. x0s::ICollect does not support non-var vectors for now\n";
+            exit(4);
+        }
     }
-    ICall call_collect("_lang_collect", { new Reg("r12"), new Con(worst_offset+move_refs.size()-1)}, new Reg("r15"));
-    instrs.splice(instrs.end(), call_collect.assign(vmap));
-    for (int i = 0; i < (int)move_refs.size(); i++)
+    unsigned int i=0;
+    //assign registers to smallest available offsets in rootstack
+    for (x0::Dst* r : vec_regs)
     {
-        instrs.push_back(new x0::ISrcDst(MOVQ, new x0::Mem("r11", worst_offset+i), move_refs.at(i)));
+        for (; rstack.at(i) != nullptr; i++);
+        rstack.at(i) = r;
+    }
+    // now make sure the array is contiguous from 0 to live_ref.size, if not, appropriately
+    // swap elements to fill in the gaps
+    for (i = live_references.size(); i < rstack.size(); i++)
+    {
+        unsigned int j=0;
+        if (rstack.at(i) != nullptr)
+        {
+            for (; rstack.at(j) != nullptr; j++);
+            rstack.at(j) = rstack.at(i);
+        }
+    }
+    list<x0::I*> instrs;
+    for (unsigned int i = 0; i < live_references.size(); i++)
+    {
+        instrs.push_back(new x0::ISrcDst(MOVQ, rstack.at(i), new x0::Mem("r12", 8*i)));
+    }
+    ICall call_collect("_lang_collect", { new Reg("r12"), new Con(live_references.size())}, new Reg("r15"));
+    instrs.splice(instrs.end(), call_collect.assign(vmap));
+    for (unsigned int i = 0; i < live_references.size(); i++)
+    {
+        instrs.push_back(new x0::ISrcDst(MOVQ, new x0::Mem("r12", 8*i), rstack.at(i)));
     }
 
 #ifdef DEBUG_BUILD
