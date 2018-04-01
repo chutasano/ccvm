@@ -158,7 +158,7 @@ mv interp(const P &p)
 {
     vecs.clear();
     map<string, mv> map;
-    return eval(p.e, map);
+    return eval(p.funcs.at(0).e, map);
 }
 
 static bool veceq(mv actual, vec_t expect[], int where)

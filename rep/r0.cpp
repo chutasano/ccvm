@@ -50,8 +50,24 @@ string gensym(string sym, bool reset = false)
     return sym + "_" + to_string(id);
 }
 
-P::P(E* ee, int heap_s) : e(ee)
+P::P(std::vector<F> fs, string to_run, int heap_s) : funcs(fs), to_run(to_run)
 {
+    if (heap_s%8 != 0 || heap_s < 0)
+    {
+        cerr << "ERROR: invalid heap_size: " << heap_s << endl;
+        cerr << "using default heapsize of 2048\n";
+        heap_size = 2048;
+    }
+    else
+    {
+        heap_size = heap_s;
+    }
+}
+
+P::P(E* ee, int heap_s)
+{
+    funcs.push_back(F("main", { }, TUNKNOWN, ee));
+    to_run = "main";
     if (heap_s%8 != 0 || heap_s < 0)
     {
         cerr << "ERROR: invalid heap_size: " << heap_s << endl;
@@ -66,24 +82,101 @@ P::P(E* ee, int heap_s) : e(ee)
 
 P::P(const P &obj)
 {
-    this->e = obj.e->clone();
+    for (const F &f : obj.funcs)
+    {
+        this->funcs.push_back(f.clone());
+    }
+    this->to_run = obj.to_run;
     this->heap_size = obj.heap_size;
 }
 
 void P::deep_delete()
 {
-    this->e->deep_delete();
-    delete this->e;
+    for (F f : funcs)
+    {
+        f.deep_delete();
+    }
 }
 
 void P::uniquify()
 {
-    gensym("", true); // resets gensym count
+    gensym("", true);
+    for (F f : funcs)
+    {
+        f.uniquify();
+    }
+}
+
+bool P::is_unique() const
+{
+    for (const F &f : funcs)
+    {
+        if (!f.is_unique())
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+c0::P P::flatten() const
+{
+    // TODO
+    vector<c0::P> cs;
+    for (const F &f : funcs)
+    {
+        //cs.push_back(f.flatten());
+        if (f.name == to_run)
+        {
+            return f.flatten();
+        }
+    }
+    exit(0);
+}
+
+void P::type_check()
+{
+    vec_type.clear();
+    vec_type[TVEC] = { };
+    for (F &f : funcs)
+    {
+        f.type_check();
+        if (f.name == to_run)
+        {
+            t = f.t;
+        }
+    }
+}
+
+void P::desugar()
+{
+    for (F &f : funcs)
+    {
+        f.desugar();
+    }
+}
+
+F::F(const F &obj)
+{
+    name = obj.name;
+    args = obj.args;
+    t = obj.t;
+    e = obj.e;
+}
+
+F F::clone() const
+{
+    E* e_copied = e->clone();
+    return F(name, args, t, e_copied);
+}
+
+void F::uniquify()
+{
     unordered_map<string, string> varmap;
     this->e->uniquify(varmap);
 }
 
-bool P::is_unique() const
+bool F::is_unique() const
 {
     list<string> varnames;
     queue<E*> nodes;
@@ -106,7 +199,7 @@ bool P::is_unique() const
     return varnames.size() == uniquenames.size();
 }
 
-c0::P P::flatten() const
+c0::P F::flatten() const
 {
     unordered_map<string, int> vars;
     vector<c0::AS*> stmts;
@@ -116,18 +209,16 @@ c0::P P::flatten() const
         cerr << "Type check failed";
         exit(1);
     }
-    return c0::P(vars, stmts, a, t, heap_size);
+    return c0::P(vars, stmts, a, t, 2048);
 }
 
-void P::type_check()
+void F::type_check()
 {
-    vec_type.clear();
-    vec_type[TVEC] = { };
     unordered_map<string, int> vars;
     t = e->t_check(vars);
 }
 
-void P::desugar()
+void F::desugar()
 {
     e = e->desugar();
 }

@@ -25,21 +25,6 @@ namespace r0
         int t;
     };
 
-    struct P
-    {
-        P(E* ee, int heap_s);
-        P(const P &obj);
-        E* e;
-        int heap_size;
-        int t;
-        void deep_delete();
-        bool is_unique() const;
-        void uniquify();
-        void type_check();
-        c0::P flatten() const;
-        void desugar();
-    };
-
     struct Num : E
     {
         Num(int64_t v) { value = v; }
@@ -131,7 +116,7 @@ namespace r0
         GlobalVar* clone() const;
         void deep_delete() { }
         E* desugar() { return this; }
-   };
+    };
 
     struct Call : E
     {
@@ -243,6 +228,40 @@ namespace r0
         Begin* clone() const;
         void deep_delete();
         E* desugar();
+    };
+
+    struct F
+    {
+        F(std::string name, std::vector<Var> args, int t, E* e) : name(name), args(args), t(t), e(e) { }
+        F(const F &obj);
+        std::string name;
+        std::vector<Var> args;
+        int t;
+        E* e;
+        F clone() const;
+        void deep_delete() { this->e->deep_delete(); delete this->e; }
+        bool is_unique() const;
+        void uniquify();
+        void type_check();
+        c0::P flatten() const;
+        void desugar();
+    };
+
+    struct P
+    {
+        P(std::vector<F> fs, std::string to_run, int heap_s);
+        P(E* ee, int heap_s);
+        P(const P &obj);
+        std::vector<F> funcs;
+        int heap_size;
+        std::string to_run;
+        int t;
+        void deep_delete();
+        bool is_unique() const;
+        void uniquify();
+        void type_check();
+        c0::P flatten() const;
+        void desugar();
     };
 }
 
