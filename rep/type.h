@@ -11,7 +11,7 @@ enum type
     TERROR,
     TUNKNOWN,
     TVEC, // TVEC+n will internally be used to separate different vector types
-    TFUN = 0x7FFFFFFF // TFUN+n to separate different func types
+    TFUN = 0x3FFFFFFF // TFUN+n to separate different func types
 };
 
 // global should be made in r0 and populated during the type checking phase

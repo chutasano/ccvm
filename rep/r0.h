@@ -255,8 +255,8 @@ namespace r0
         P(const P &obj);
         std::vector<F> funcs;
         int heap_size;
-        std::string to_run;
         int t;
+        std::string to_run;
         void deep_delete();
         bool is_unique() const;
         void uniquify();

@@ -30,7 +30,7 @@ using namespace r0;
 map<int, vector<int> > vec_type;
 map<int, vector<int> > fun_type;
 
-string gensym(string sym, bool reset = false)
+static string gensym(string sym, bool reset = false)
 {
     static unordered_map<string, unsigned int> count;
     if (reset && sym == "")
@@ -51,6 +51,31 @@ string gensym(string sym, bool reset = false)
     return sym + "_" + to_string(id);
 }
 
+static int add_ftype(vector<int> ftype)
+{
+    // expensive... oh well maybe optimize todo?
+    auto it = fun_type.begin();
+    int t = TUNKNOWN;
+    for (; it != fun_type.end(); ++it)
+    {
+        // no need to worry about checking for nested vectors because
+        // the above for loop should take care of that and prevent
+        // duplicate definition from occuring
+        if (it->second == ftype)
+        {
+            t = it->first;
+            break;
+        }
+    }
+    if (it == fun_type.end())
+    {
+        int next_index = (--it)->first + 1;
+        fun_type[next_index] = ftype;
+        t = next_index;
+    }
+    return t;
+}
+
 P::P(std::vector<F> fs, string to_run, int heap_s) : funcs(fs), to_run(to_run)
 {
     if (heap_s%8 != 0 || heap_s < 0)
@@ -63,6 +88,7 @@ P::P(std::vector<F> fs, string to_run, int heap_s) : funcs(fs), to_run(to_run)
     {
         heap_size = heap_s;
     }
+    t = TUNKNOWN;
 }
 
 P::P(E* ee, int heap_s)
@@ -79,6 +105,7 @@ P::P(E* ee, int heap_s)
     {
         heap_size = heap_s;
     }
+    t = TUNKNOWN;
 }
 
 P::P(const P &obj)
@@ -89,6 +116,7 @@ P::P(const P &obj)
     }
     this->to_run = obj.to_run;
     this->heap_size = obj.heap_size;
+    this->t = obj.t;
 }
 
 void P::deep_delete()
@@ -132,31 +160,34 @@ c0::P P::flatten() const
 
 void P::type_check()
 {
-    vec_type.clear();
-    vec_type[TVEC] = { };
-    fun_type[TFUN] = { };
-    unordered_map<string, int> vmap;
-    for (F &f : funcs)
+    if (t == TUNKNOWN)
     {
-        if (f.name != to_run)
+        vec_type.clear();
+        vec_type[TVEC] = { };
+        fun_type[TFUN] = { };
+        unordered_map<string, int> vmap;
+        for (F &f : funcs)
         {
-            if (f.t == TUNKNOWN || f.t == TERROR)
+            if (f.name != to_run)
             {
-                cerr << "P::typecheck: " << "non-main function ret type must be known\n";
-                exit(2);
-            }
-            else
-            {
-                vmap[f.name] = f.t;
+                if (f.t == TUNKNOWN || f.t == TERROR)
+                {
+                    cerr << "P::typecheck: " << "non-main function ret type must be known\n";
+                    exit(2);
+                }
+                else if (f.name != to_run)
+                {
+                    vmap[f.name] = f.t;
+                }
             }
         }
-    }
-    for (F &f : funcs)
-    {
-        f.type_check(vmap);
-        if (f.name == to_run)
+        for (F &f : funcs)
         {
-            t = f.t;
+            f.type_check(vmap);
+            if (f.name == to_run)
+            {
+                t = fun_type.at(f.t).back();
+            }
         }
     }
 }
@@ -231,6 +262,7 @@ c0::F F::flatten() const
 
 void F::type_check(unordered_map<string, int> vars)
 {
+    vector<int> ftype;
     for (Var v : args)
     {
         if (v.t == TUNKNOWN)
@@ -241,9 +273,11 @@ void F::type_check(unordered_map<string, int> vars)
         else
         {
             vars[v.name] = v.t;
+            ftype.push_back(v.t);
         }
     }
-    t = e->t_check(vars);
+    ftype.push_back(e->t_check(vars));
+    t = add_ftype(ftype);
 }
 
 void F::desugar()

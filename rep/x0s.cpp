@@ -207,7 +207,7 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             }
             // can't use map to get type because simple programs may optimize
             // the ret part such that it's returning a non-variable (ie: constant)
-            ins.push_back(new x0::IRet(this->t));
+            ins.push_back(new x0::IRet(fun_type.at(this->t).back()));
         }
         else
         {
