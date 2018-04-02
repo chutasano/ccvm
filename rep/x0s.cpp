@@ -30,6 +30,13 @@ const assign_mode a_mode = ASG_SMART;
 
 list<x0::I*> F::assign(bool is_default, int heap_size)
 {
+    static const vector<string> callee_regs
+    {
+        "r12", "r13", "r14", "r15", "rbx" 
+        //"rsp", "rbp"
+        //technically callee saves, but I don't use rbp so no need to save
+        //rsp is auto-restored by how stacks work
+    };
     Graph::NodeList in;
     // generate nodes
     for (auto s : vars)
@@ -159,6 +166,11 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
         }
     }
     ins.push_back(new x0::ILabel(name, true));
+    for (unsigned int i=0; i<callee_regs.size(); i++)
+    {
+        ins.push_back(new x0::ISrc(PUSHQ, new x0::Reg(callee_regs.at(i))));
+    }
+
     if (is_default)
     {
         ICall a("_lang_init_heap", { new Con(heap_size) }, new Reg("r15"));
@@ -188,6 +200,10 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             if (need_stack)
             {
                 ins.push_back(new x0::ISrcDst(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
+            }
+            for (unsigned int i=0; i<callee_regs.size(); i++)
+            {
+                ins.push_back(new x0::IDst(POPQ, new x0::Reg(callee_regs.at(callee_regs.size()-i-1))));
             }
             // can't use map to get type because simple programs may optimize
             // the ret part such that it's returning a non-variable (ie: constant)
