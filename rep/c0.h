@@ -158,6 +158,8 @@ namespace c0
     struct P
     {
         P(std::vector<F> funcs, std::string to_run, int heap_size) : funcs(funcs), to_run(to_run), heap_size(heap_size) { }
+        ~P() { for (F f : funcs) for (AS* s : f.stmts) delete s;
+        }
         std::vector<F> funcs;
         std::string to_run;
         int heap_size;

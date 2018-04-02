@@ -10,13 +10,14 @@ enum type
     TVOID,
     TERROR,
     TUNKNOWN,
-    TVEC // TVEC should be the last one, TVEC+n will internally be used to separate
-         // different vector types
+    TVEC, // TVEC+n will internally be used to separate different vector types
+    TFUN = 0x7FFFFFFF // TFUN+n to separate different func types
 };
 
 // global should be made in r0 and populated during the type checking phase
 // map from type (TVEC + n) to list of types
 extern std::map<int, std::vector<int> > vec_type;
+extern std::map<int, std::vector<int> > fun_type;
 
 enum tbool
 {
@@ -41,6 +42,8 @@ static inline std::string type2name(int n)
             return "_LANG_VOID_T";
         case TVEC:
             return "_LANG_VEC_T";
+        case TFUN:
+            return "_LANG_FUN_T";
         default:
             if (n == TERROR || n == TUNKNOWN)
             {

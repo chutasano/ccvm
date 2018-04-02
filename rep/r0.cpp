@@ -28,6 +28,7 @@ using namespace r0;
 //'[s]ugar
 
 map<int, vector<int> > vec_type;
+map<int, vector<int> > fun_type;
 
 string gensym(string sym, bool reset = false)
 {
@@ -133,9 +134,26 @@ void P::type_check()
 {
     vec_type.clear();
     vec_type[TVEC] = { };
+    fun_type[TFUN] = { };
+    unordered_map<string, int> vmap;
     for (F &f : funcs)
     {
-        f.type_check();
+        if (f.name != to_run)
+        {
+            if (f.t == TUNKNOWN || f.t == TERROR)
+            {
+                cerr << "P::typecheck: " << "non-main function ret type must be known\n";
+                exit(2);
+            }
+            else
+            {
+                vmap[f.name] = f.t;
+            }
+        }
+    }
+    for (F &f : funcs)
+    {
+        f.type_check(vmap);
         if (f.name == to_run)
         {
             t = f.t;
@@ -197,19 +215,34 @@ bool F::is_unique() const
 c0::F F::flatten() const
 {
     unordered_map<string, int> vars;
+    for (Var v : args)
+    {
+        vars[v.name] = v.t;
+    }
     vector<c0::AS*> stmts;
     c0::Arg* a = e->to_c0(vars, stmts);
     if (t == TERROR)
     {
-        cerr << "Type check failed";
+        cerr << "Type check failed\n";
         exit(1);
     }
     return c0::F(name, vars, stmts, a, t);
 }
 
-void F::type_check()
+void F::type_check(unordered_map<string, int> vars)
 {
-    unordered_map<string, int> vars;
+    for (Var v : args)
+    {
+        if (v.t == TUNKNOWN)
+        {
+            cerr << "F::type_check: arguments must have known type";
+            exit(2);
+        }
+        else
+        {
+            vars[v.name] = v.t;
+        }
+    }
     t = e->t_check(vars);
 }
 

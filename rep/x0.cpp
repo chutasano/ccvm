@@ -130,14 +130,14 @@ string IRet::to_asm()
             ss << "    CALLQ\t_lang_print_void\n";
             break;
         default:
-            if (t > TVEC) // types > vec are reserved for dynamic types
+            if (t > TVEC && t < TFUN)
             {
                 ss << "    CALLQ\t_lang_print_vec\n";
                 break;
             }
             else
             {
-                cerr <<"WTF???\n";
+                cerr <<"WTF??? got unknown type: " << t << "\n";
                 exit(2);
             }
     }

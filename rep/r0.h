@@ -94,7 +94,8 @@ namespace r0
 
     struct Var : E
     {
-        Var(std::string varname) { name = varname; }
+        Var(std::string varname) : name(varname) { }
+        Var(std::string varname, int t) : name(varname) { this->t = t; } 
         std::string name;
         std::list<E*> get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
@@ -242,7 +243,7 @@ namespace r0
         void deep_delete() { this->e->deep_delete(); delete this->e; }
         bool is_unique() const;
         void uniquify();
-        void type_check();
+        void type_check(std::unordered_map<std::string, int> vars);
         c0::F flatten() const;
         void desugar();
     };

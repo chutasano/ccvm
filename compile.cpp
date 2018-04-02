@@ -205,7 +205,7 @@ bool test_compile(const r0::P &p, vec_t expect[])
         case TVOID:
             return t_void(output, expect[0].val);
         default:
-            if (t > TVEC)
+            if (t > TVEC && t < TFUN)
             {
                 stringstream ss;
                 ss.str(output);

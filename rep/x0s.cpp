@@ -41,7 +41,7 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
     // generate nodes
     for (auto s : vars)
     {
-        in.add_node(s.first, (s.second > TVEC) ? ROOTSTACK : STACK);
+        in.add_node(s.first, (s.second > TVEC && s.second < TFUN) ? ROOTSTACK : STACK);
 #ifdef DEBUG
         cout << s.first << ":" << s.second << endl;
 #endif
@@ -99,7 +99,7 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             }
         }
         in.add_edges(it->first, local_interf);
-        if (vars.at(it->first) > TVEC)
+        if (vars.at(it->first) > TVEC && vars.at(it->first) < TFUN)
         {
             for (pair<ICollect*, int> p : collects)
             {
@@ -143,14 +143,14 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
     unsigned int worst_rootstack = 0;
     for (auto p : vmap)
     {
-        if (vars.at(p.first) < TVEC)
+        if (vars.at(p.first) < TVEC || vars.at(p.first) > TFUN)
         {
             if (p.second.first > worst_stack)
             {
                 worst_stack = p.second.first;
             }
         }
-        else if (vars.at(p.first) > TVEC)
+        else if (vars.at(p.first) > TVEC && vars.at(p.first) < TFUN)
         {
             if (p.second.first > worst_rootstack)
             {
@@ -229,14 +229,23 @@ x0::P P::assign()
     tags.push_back(x0::Tag(type2name(TBOOL), TBOOL));
     tags.push_back(x0::Tag(type2name(TVOID), TVOID));
     tags.push_back(x0::Tag(type2name(TVEC), TVEC));
+    tags.push_back(x0::Tag(type2name(TFUN), TFUN));
     // type -> list of types (for vectors)
     vec_type.erase(vec_type.begin());
+    fun_type.erase(fun_type.begin());
     for (auto vpair : vec_type)
     {
         auto v = vpair.second;
         v.insert(v.begin(), v.size());
         tags.push_back(x0::Tag(type2name(vpair.first), v));
     }
+    for (auto fpair : fun_type)
+    {
+        auto f = fpair.second;
+        f.insert(f.begin(), f.size());
+        tags.push_back(x0::Tag(type2name(fpair.first), f));
+    }
+
     return x0::P(ins, tags);
 }
 

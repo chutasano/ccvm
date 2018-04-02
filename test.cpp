@@ -448,6 +448,10 @@ void test_all()
        t(v1let, 64, 128);
     }
 
+    ts("Simple functions");
+    {
+    }
+
     cout << "Total tests failed: " << fails << endl;
 }
 
