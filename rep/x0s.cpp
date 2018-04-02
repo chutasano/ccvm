@@ -1,3 +1,4 @@
+#include <array>
 #include <iterator>
 #include <list>
 #include <string>
@@ -18,11 +19,11 @@ using namespace x0s;
 //#define DEBUG_VERB
 
 
+// r12: rootstack ptr
+// r15: freeptr
 static const vector<string> regs
 {
-    "rbx",
-    "r13",
-    "r14",
+    "rbx", "r13", "r14", "rdi", "rsi", "rdx", "rcx", "r8", "r9"
 };
 
 const assign_mode a_mode = ASG_SMART;
@@ -148,6 +149,13 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             {
                 worst_rootstack = p.second.first;
             }
+        }
+    }
+    for (auto c : collects)
+    {
+        if (c.first->live_references.size() + regs.size() > worst_rootstack)
+        {
+            worst_rootstack = c.first->live_references.size() + regs.size();
         }
     }
     ins.push_back(new x0::ILabel(name, true));
@@ -401,16 +409,21 @@ list <x0::I*> ICollect::assign(const s2vmap &vmap)
 
 list<x0::I*> ICall::assign(const s2vmap &vmap)
 {
-    static const list<string> available_regs = 
+    static const vector<string> available_regs = 
     {
         "rdi", "rsi", "rdx", "rcx", "r8", "r9"
     };
+
     if (args.size() > 6)
     {
         cerr << "ERROR: more than 6 args for function not supported atm.\n";
         exit(1);
     }
     list<x0::I*> a;
+    for (unsigned int i=0; i<available_regs.size(); i++)
+    {
+        a.push_back(new x0::ISrc(PUSHQ, new x0::Reg(available_regs.at(i))));
+    }
     for(auto it_pair = make_pair(args.begin(), available_regs.begin());
             it_pair.first != args.end();
             ++it_pair.first, ++it_pair.second)
@@ -418,6 +431,10 @@ list<x0::I*> ICall::assign(const s2vmap &vmap)
         a.push_back(new x0::ISrcDst(MOVQ, (*it_pair.first)->assign(vmap), new x0::Reg(*it_pair.second)));
     }
     a.push_back(new x0::ICall(this->label));
+    for (unsigned int i=0; i<available_regs.size(); i++)
+    {
+        a.push_back(new x0::IDst(POPQ, new x0::Reg(available_regs.at(available_regs.size()-i-1))));
+    }
     if (dst != nullptr)
     {
         a.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rax"), static_cast<x0::Dst*>(dst->assign(vmap))));
