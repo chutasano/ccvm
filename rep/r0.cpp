@@ -163,6 +163,7 @@ void P::type_check()
     if (t == TUNKNOWN)
     {
         vec_type.clear();
+        fun_type.clear();
         vec_type[TVEC] = { };
         fun_type[TFUN] = { };
         unordered_map<string, int> vmap;

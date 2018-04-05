@@ -49,9 +49,13 @@ static inline std::string type2name(int n)
             {
                 return "WTF_WRONG_TYPE";
             }
-            else
+            else if (n > TVEC && n < TFUN)
             {
                 return "_LANG_VEC_T_" + std::to_string(n - TVEC);
+            }
+            else
+            {
+                return "_LANG_FUN_T_" + std::to_string(n - TFUN);
             }
     }
 }
