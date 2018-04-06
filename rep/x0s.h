@@ -188,10 +188,11 @@ namespace x0s
 
     struct F
     {
-        F(std::string name, std::list<I*> i, std::unordered_map<std::string, int> v, int t) : name(name), instr(i), vars(v), t(t) { }
+        F(std::string name, std::list<I*> i, std::unordered_map<std::string, int> v, std::vector<std::string> a, int t) : name(name), instr(i), vars(v), args(a), t(t) { }
         std::string name;
         std::list<I*> instr;
         std::unordered_map<std::string, int> vars;
+        std::vector<std::string> args;
         int t;
         std::list<x0::I*> assign(bool is_default, int heap_size);
     };

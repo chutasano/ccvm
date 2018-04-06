@@ -234,9 +234,11 @@ bool F::is_unique() const
 c0::F F::flatten() const
 {
     unordered_map<string, int> vars;
+    vector<string> args_names;
     for (Var v : args)
     {
         vars[v.name] = v.t;
+        args_names.push_back(v.name);
     }
     vector<c0::AS*> stmts;
     c0::Arg* a = e->to_c0(vars, stmts);
@@ -245,7 +247,7 @@ c0::F F::flatten() const
         cerr << "Type check failed\n";
         exit(1);
     }
-    return c0::F(name, vars, stmts, a, t);
+    return c0::F(name, vars, args_names, stmts, a, t);
 }
 
 void F::generate_fun_type(unordered_map<string, int> &vars)

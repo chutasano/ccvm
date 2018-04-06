@@ -146,9 +146,10 @@ namespace c0
 
     struct F
     {
-        F(std::string name, std::unordered_map<std::string, int> v, std::vector<AS*> s, Arg* a, int t) : name(name), vars(v), stmts(s), arg(a), t(t)  { }
+        F(std::string name, std::unordered_map<std::string, int> v, std::vector<std::string> as, std::vector<AS*> s, Arg* a, int t) : name(name), vars(v), args(as), stmts(s), arg(a), t(t)  { }
         std::string name;
         std::unordered_map<std::string, int> vars;
+        std::vector<std::string> args;
         std::vector<AS*> stmts;
         Arg* arg; //ret
         int t;

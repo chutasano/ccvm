@@ -196,7 +196,7 @@ x0s::F F::select()
         instrs.splice(instrs.end(), is);
     }
     instrs.push_back(new x0s::IRet(this->arg->to_arg()));
-    return x0s::F(name, instrs, vars, t);
+    return x0s::F(name, instrs, vars, args, t);
 }
 
 x0s::P P::select()
