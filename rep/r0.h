@@ -121,6 +121,7 @@ namespace r0
 
     struct Call : E
     {
+        Call(std::string name, std::list<E*> ee) : name(name), args(ee), t_tentative(TUNKNOWN) { }
         Call(std::string name, std::list<E*> ee, type t) : name(name), args(ee), t_tentative(t) { }
         std::string name;
         std::list<E*> args;
@@ -233,6 +234,7 @@ namespace r0
 
     struct F
     {
+        F(std::string name, std::vector<Var> args, E* e) : name(name), args(args), t(TUNKNOWN), e(e) { }
         F(std::string name, std::vector<Var> args, int t, E* e) : name(name), args(args), t(t), e(e) { }
         F(const F &obj);
         std::string name;
@@ -244,6 +246,7 @@ namespace r0
         bool is_unique() const;
         void uniquify();
         void type_check(std::unordered_map<std::string, int> vars);
+        void generate_fun_type(std::unordered_map<std::string, int> &vars);
         c0::F flatten() const;
         void desugar();
     };

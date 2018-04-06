@@ -173,12 +173,13 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
 
     if (is_default)
     {
-        ICall a("_lang_init_heap", { new Con(heap_size) }, new Reg("r15"));
-        ins.splice(ins.end(), a.assign(vmap));
+        ICall init_heap_func("_lang_init_heap", { new Con(heap_size) }, new Reg("r15"));
+        ins.splice(ins.end(), init_heap_func.assign(vmap));
+        ICall dbg_func("_lang_debug", { }, nullptr);
+        ins.splice(ins.end(), dbg_func.assign(vmap));
     }
     int total_offset;
     bool need_stack = worst_stack >= regs.size();
-    ins.push_back(new x0::ICall("_lang_debug"));
     if (need_stack)
     {
         total_offset = 8*(worst_stack - regs.size() + 1);
@@ -242,8 +243,13 @@ x0::P P::assign()
     for (auto fpair : fun_type)
     {
         auto f = fpair.second;
-        f.insert(f.begin(), f.size());
-        tags.push_back(x0::Tag(type2name(fpair.first), f));
+        // functions with ret TUNKNOWN are generated as intermediate steps.
+        // we need to toss them out because they aren't going to be in use
+        if (f.back() != TUNKNOWN)
+        {
+            f.insert(f.begin(), f.size());
+            tags.push_back(x0::Tag(type2name(fpair.first), f));
+        }
     }
 
     return x0::P(ins, tags);

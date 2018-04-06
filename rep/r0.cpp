@@ -5,6 +5,7 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <cassert>
 
 #include "c0.h"
 #include "r0.h"
@@ -169,26 +170,12 @@ void P::type_check()
         unordered_map<string, int> vmap;
         for (F &f : funcs)
         {
-            if (f.name != to_run)
-            {
-                if (f.t == TUNKNOWN || f.t == TERROR)
-                {
-                    cerr << "P::typecheck: " << "non-main function ret type must be known\n";
-                    exit(2);
-                }
-                else if (f.name != to_run)
-                {
-                    vmap[f.name] = f.t;
-                }
-            }
+            f.generate_fun_type(vmap);
         }
         for (F &f : funcs)
         {
             f.type_check(vmap);
-            if (f.name == to_run)
-            {
-                t = fun_type.at(f.t).back();
-            }
+            t = fun_type.at(f.t).back();
         }
     }
 }
@@ -261,24 +248,48 @@ c0::F F::flatten() const
     return c0::F(name, vars, stmts, a, t);
 }
 
-void F::type_check(unordered_map<string, int> vars)
+void F::generate_fun_type(unordered_map<string, int> &vars)
 {
     vector<int> ftype;
+    if (t < TFUN)
+    {
+        for (Var v : args)
+        {
+            if (v.t == TUNKNOWN)
+            {
+                cerr << "F::generate_fun_type: arguments must have known type";
+                exit(2);
+            }
+            else
+            {
+                ftype.push_back(v.t);
+            }
+        }
+        ftype.push_back(t);
+        t = add_ftype(ftype);
+        vars[name] = t;
+    }
+}
+
+void F::type_check(unordered_map<string, int> vars)
+{
     for (Var v : args)
     {
-        if (v.t == TUNKNOWN)
-        {
-            cerr << "F::type_check: arguments must have known type";
-            exit(2);
-        }
-        else
-        {
-            vars[v.name] = v.t;
-            ftype.push_back(v.t);
-        }
+        vars[v.name] = v.t;
     }
-    ftype.push_back(e->t_check(vars));
-    t = add_ftype(ftype);
+    int t_expected = e->t_check(vars);
+    if (fun_type.at(t).back() == TUNKNOWN)
+    {
+        vector<int> ftype_cpy = fun_type.at(t);
+        ftype_cpy.back() = t_expected;
+        t = add_ftype(ftype_cpy);
+        vars[name] = t;
+    }
+    else if (fun_type.at(t).back() != t_expected)
+    {
+        cerr << "F::type_check: expected return type mismatch with calculated type\n";
+        exit(1);
+    }
 }
 
 void F::desugar()
@@ -581,11 +592,29 @@ int Call::t_check(unordered_map<string, int> vmap)
 {
     if (t == TUNKNOWN)
     {
-        for (E* e : args)
+        // no type specifier means that function must exist in our context
+        // (ie: not a function from somewhere else like the runtime library)
+        // that means we can find it in vmap, so we can do a stricter check
+        if (t_tentative == TUNKNOWN)
         {
-            e->t_check(vmap);
+            int i = 0;
+            auto t_vec = fun_type.at(vmap.at(name));
+            for (E* e : args)
+            {
+                int t_arg = e->t_check(vmap);
+                assert(t_arg == t_vec.at(i));
+                i++;
+            }
+            t = t_vec.back();
         }
-        t = t_tentative;
+        else
+        {
+            for (E* e : args)
+            {
+                e->t_check(vmap);
+            }
+            t = t_tentative;
+        }
     }
     return t;
 }

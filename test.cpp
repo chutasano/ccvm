@@ -30,6 +30,7 @@
 
 // VAR(x) -> vx
 #define VAR(name) UPTR(r0::Var, v ## name, #name)
+#define VAR_T(name, type) UPTR(r0::Var, v ## name, #name, type)
 
 // LET(name, var, vexp, bexp) -> name (nothing special or cool)
 #define LET(name, var, ...) UPTR(r0::Let, name, #var, __VA_ARGS__)
@@ -126,10 +127,29 @@ static void t(r0::E* e, vec_t expect[], int heap_size = 2048)
     }
 }
 
+static void t(r0::P &p, vec_t expect[])
+{
+    p.desugar();
+    if (testfunc(p, expect))
+    {
+        cout << "  Test passed\n";
+    }
+    else
+    {
+        cout << "  Test failed!!!!!!!!!!!!\n";
+        fails++;
+    }
+}
 static void t(r0::E* e, int expect, int heap_size=2048)
 {
     vec_t woof[] = { vec_t(TNUM, expect) };
     t(e, woof, heap_size);
+}
+
+static void t(r0::P &p, int expect)
+{
+    vec_t woof[] = { vec_t(TNUM, expect) };
+    t(p, woof);
 }
 
 // test for uniqueness and uniquify
@@ -445,13 +465,32 @@ void test_all()
         LET(v3let, c, _v3, bplus_bplus_bplus_vr1_vr2_vr3_bplus_bplus_vr4_vr5_vr6 );
         LET(v2let, b, _v2, v3let);
         LET(v1let, a, _v1, v2let);
-       t(v1let, 64, 128);
+        t(v1let, 64, 128);
     }
 
     ts("Simple functions");
     {
+        NUM(0);
+        NUM(1);
+        NNUM(2);
+        r0::Var n = r0::Var("n", TNUM);
+        auto nref = &n;
+        EQ(nref, n0);
+        EQ(nref, n1);
+        PLUS(nref, nn2);
+        PLUS(nref, nn1);
+        UPTR(r0::Call, fibsub2, "simple_fib", { bplus_nref_nn2 });
+        UPTR(r0::Call, fibsub1, "simple_fib", { bplus_nref_nn1 });
+        PLUS(fibsub2, fibsub1);
+        IF(fib_eq1, beq_nref_n1, n1, bplus_fibsub2_fibsub1);
+        IF(fib_body, beq_nref_n0, n0, fib_eq1);
+        r0::F fib = r0::F("simple_fib", {n}, TNUM, fib_body);
+        NUM(10);
+        UPTR (r0::Call, callfib, "simple_fib", { n10 });
+        r0::F main = r0::F("main", { }, callfib);
+        r0::P prog = r0::P({fib, main }, "main", 2048);
+        t(prog, 55);
     }
-
     cout << "Total tests failed: " << fails << endl;
 }
 
