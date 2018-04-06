@@ -23,7 +23,7 @@ using namespace x0s;
 // r15: freeptr
 static const vector<string> regs
 {
-    "rbx", "r13", "r14", "rdi", "rsi", "rdx", "rcx", "r8", "r9"
+     "rdi", "rsi", "rdx", "rcx", "r8", "r9", "r13", "r14", "rbx"
 };
 
 const assign_mode a_mode = ASG_SMART;
@@ -32,7 +32,10 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
 {
     static const vector<string> callee_regs
     {
-        "r12", "r13", "r14", "r15", "rbx" 
+        // r12 and r15 are used by my program as special registers, so it should
+        // not be saved across function calls. Only exception: main
+        //"r12", "r15"
+        "r13", "r14", "rbx" 
         //"rsp", "rbp"
         //technically callee saves, but I don't use rbp so no need to save
         //rsp is auto-restored by how stacks work
@@ -166,13 +169,16 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
         }
     }
     ins.push_back(new x0::ILabel(name, true));
-    for (unsigned int i=0; i<callee_regs.size(); i++)
+    // we don't need to push registers that we don't use
+    for (unsigned int i=0; i<callee_regs.size() && i+regs.size()-4<worst_stack; i++)
     {
         ins.push_back(new x0::ISrc(PUSHQ, new x0::Reg(callee_regs.at(i))));
     }
 
     if (is_default)
     {
+        ins.push_back(new x0::ISrc(PUSHQ, new x0::Reg("r12")));
+        ins.push_back(new x0::ISrc(PUSHQ, new x0::Reg("r15")));
         ICall init_heap_func("_lang_init_heap", { new Con(heap_size) }, new Reg("r15"));
         ins.splice(ins.end(), init_heap_func.assign(vmap));
         ICall dbg_func("_lang_debug", { }, nullptr);
@@ -202,13 +208,20 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             {
                 ins.push_back(new x0::ISrcDst(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
             }
-            for (unsigned int i=0; i<callee_regs.size(); i++)
+            for (unsigned int i=0; i<callee_regs.size() && i+regs.size()-4<worst_stack; i++)
             {
-                ins.push_back(new x0::IDst(POPQ, new x0::Reg(callee_regs.at(callee_regs.size()-i-1))));
+                ins.push_back(new x0::IDst(POPQ, new x0::Reg(callee_regs.at(
+                                    ((worst_stack < callee_regs.size()) ? worst_stack : callee_regs.size())-i-1))));
+            }
+
+            if (is_default)
+            {
+                ins.push_back(new x0::IDst(POPQ, new x0::Reg("r15")));
+                ins.push_back(new x0::IDst(POPQ, new x0::Reg("r12")));
             }
             // can't use map to get type because simple programs may optimize
             // the ret part such that it's returning a non-variable (ie: constant)
-            ins.push_back(new x0::IRet(fun_type.at(this->t).back()));
+            ins.push_back(new x0::IRet(fun_type.at(this->t).back(), is_default));
         }
         else
         {
@@ -481,7 +494,7 @@ list<x0::I*> ILabel::assign(const s2vmap &vmap)
 list<x0::I*> IRet::assign(const s2vmap &vmap)
 {
     // TODO fix
-    return { new x0::IRet(TBOOL) };
+    return { new x0::IRet(TBOOL,false) };
 }
 
 list<string> INoArg::get_vars()

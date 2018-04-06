@@ -116,32 +116,37 @@ string IRet::to_asm()
     // this should be processed by the callee of the program
     // in automated tests
     stringstream ss;
-    ss << "MOVQ\t%rax, %rdi\n";
-    type ty = static_cast<type>(t);
-    switch (ty)
+    // only for main function
+    if (print_ret_val)
     {
-        case TNUM:
-            ss << "    CALLQ\t_lang_print_num\n";
-            break;
-        case TBOOL:
-            ss << "    CALLQ\t_lang_print_bool\n";
-            break;
-        case TVOID:
-            ss << "    CALLQ\t_lang_print_void\n";
-            break;
-        default:
-            if (t > TVEC && t < TFUN)
-            {
-                ss << "    CALLQ\t_lang_print_vec\n";
+        ss << "MOVQ\t%rax, %rdi\n";
+        type ty = static_cast<type>(t);
+        switch (ty)
+        {
+            case TNUM:
+                ss << "    CALLQ\t_lang_print_num\n";
                 break;
-            }
-            else
-            {
-                cerr <<"WTF??? got unknown type: " << t << "\n";
-                exit(2);
-            }
+            case TBOOL:
+                ss << "    CALLQ\t_lang_print_bool\n";
+                break;
+            case TVOID:
+                ss << "    CALLQ\t_lang_print_void\n";
+                break;
+            default:
+                if (t > TVEC && t < TFUN)
+                {
+                    ss << "    CALLQ\t_lang_print_vec\n";
+                    break;
+                }
+                else
+                {
+                    cerr <<"WTF??? got unknown type: " << t << "\n";
+                    exit(2);
+                }
+        }
+        ss << "    ";
     }
-    ss << "    RETQ";
+    ss << "RETQ";
     return ss.str();
 }
 
