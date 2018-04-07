@@ -11,5 +11,5 @@ struct vec_t
     int64_t val;
 };
 
-void test_all();
+void test_all(bool);
 

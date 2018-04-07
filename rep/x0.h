@@ -129,8 +129,9 @@ namespace x0
 
     struct IRet : I
     {
-        IRet(int ty) : t(ty) {  }
+        IRet(int ty, bool print) : t(ty), print(print) {  }
         int t;
+        bool print;
         std::string to_asm();
     };
 

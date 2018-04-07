@@ -185,7 +185,8 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
         total_offset = 8*(worst_stack - regs.size() + 1);
         ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     }
-    if (worst_rootstack >= regs.size())
+    if (worst_rootstack >= regs.size() && is_default) //FIXME, use highest worst_rootstack
+        // across all functions
     {
         ICall a("_lang_init_rootstack", { new Con((worst_rootstack - regs.size() + 1))}, new Reg("r12"));
         ins.splice(ins.end(), a.assign(vmap));
@@ -208,7 +209,14 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             }
             // can't use map to get type because simple programs may optimize
             // the ret part such that it's returning a non-variable (ie: constant)
-            ins.push_back(new x0::IRet(fun_type.at(this->t).back()));
+            if (is_default)
+            {
+                ins.push_back(new x0::IRet(fun_type.at(this->t).back(), true));
+            }
+            else
+            {
+                ins.push_back(new x0::IRet(fun_type.at(this->t).back(), false));
+            }
         }
         else
         {
@@ -481,7 +489,7 @@ list<x0::I*> ILabel::assign(const s2vmap &vmap)
 list<x0::I*> IRet::assign(const s2vmap &vmap)
 {
     // TODO fix
-    return { new x0::IRet(TBOOL) };
+    return { new x0::IRet(TBOOL, false) };
 }
 
 list<string> INoArg::get_vars()
