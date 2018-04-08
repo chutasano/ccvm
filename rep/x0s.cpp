@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <array>
 #include <iterator>
 #include <list>
@@ -5,6 +6,8 @@
 #include <typeinfo>
 #include <unordered_map>
 #include <vector>
+
+#include <cassert>
 
 #include "asm.h"
 #include "graph.h"
@@ -24,19 +27,27 @@ using namespace x0s;
 static const vector<string> regs
 {
     "rbx", "r13", "r14", "rdi", "rsi", "rdx", "rcx", "r8", "r9"
+};  //mini todo: regs = rbx ~ r15 + caller regs
+
+static const vector<string> callers = 
+{
+    "rdi", "rsi", "rdx", "rcx", "r8", "r9"
 };
+
+static const vector<string> callees
+{
+    // although we don't use r12 and r15 as registers, we should
+    // still respect that we need to save them in case we get called by
+    // a program without our r12 r15 structure
+    // furthermore, rbp and rsp are saved separately
+    "r12", "r13", "r14", "r15", "rbx" 
+};
+
 
 const assign_mode a_mode = ASG_SMART;
 
 list<x0::I*> F::assign(bool is_default, int heap_size)
 {
-    static const vector<string> callee_regs
-    {
-        "r12", "r13", "r14", "r15", "rbx" 
-        //"rsp", "rbp"
-        //technically callee saves, but I don't use rbp so no need to save
-        //rsp is auto-restored by how stacks work
-    };
     Graph::NodeList in;
     // generate nodes
     for (auto s : vars)
@@ -140,6 +151,9 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
     }
 #endif
     unsigned int worst_stack = 0;
+    // todo, worst_rootstack should communicate back to main, where it should
+    // sum up the worst_rootstacks for each function call to get the true
+    // worst_rootstack
     unsigned int worst_rootstack = 0;
     for (auto p : vmap)
     {
@@ -166,12 +180,16 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
         }
     }
     ins.push_back(new x0::ILabel(name, true));
-    for (unsigned int i=0; i<callee_regs.size(); i++)
+    if (!is_default)
     {
-        ins.push_back(new x0::ISrc(PUSHQ, new x0::Reg(callee_regs.at(i))));
+        ins.push_back(new x0::ISrc(PUSHQ, new x0::Reg("rbp")));
+        ins.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rsp"), new x0::Reg("rbp")));
+        for (unsigned int i=0; i<callees.size(); i++)
+        {
+            ins.push_back(new x0::ISrc(PUSHQ, new x0::Reg(callees.at(i))));
+        }
     }
-
-    if (is_default)
+    else
     {
         ICall init_heap_func("_lang_init_heap", { new Con(heap_size) }, new Reg("r15"));
         ins.splice(ins.end(), init_heap_func.assign(vmap));
@@ -185,8 +203,66 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
         total_offset = 8*(worst_stack - regs.size() + 1);
         ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(total_offset), new x0::Reg("rsp")));
     }
-    if (worst_rootstack >= regs.size() && is_default) //FIXME, use highest worst_rootstack
-        // across all functions
+    vector<int> v_callers;
+    for (unsigned int i=0; i<min(callers.size(), args.size()); i++)
+    {
+        // let's be portable here :)
+        v_callers.push_back(distance(regs.begin(), find(regs.begin(), regs.end(), callers.at(i))));
+    }
+    // map from the 6 callers regs to args that are colored as one of the caller regs
+    map<int, Var> reg2arg;
+    for (unsigned int i=0; i<v_callers.size(); i++)
+    {
+        reg2arg.emplace(v_callers.at(i), args.at(i));
+    }
+    if (!reg2arg.empty())
+    {
+        int backed_up = -1;
+        auto next = reg2arg.begin();
+        while (!reg2arg.empty())
+        {
+            auto it = reg2arg.begin();
+            if (next->first == backed_up)
+            {
+                // we're trying to get from something we backed up, intercept
+                // it and use rax
+                ins.push_back(new x0::ISrcDst(MOVQ, new x0::Reg("rax"),
+                            static_cast<x0::Dst*>(next->second.assign(vmap))));
+                backed_up = -1;
+            }
+            else
+            {
+                for (; it != reg2arg.end(); ++it) // search for conflicts
+                {
+                    if ((int)vmap.at(it->second.var).first == next->first)
+                    {
+                        break;
+                    }
+                }
+                if (it != reg2arg.end())
+                {
+                    // conflict, we better back it up
+                    // only one backup at a time should exist based on my algorithm
+                    assert(backed_up == -1);
+                    backed_up = vmap.at(next->second.var).first;
+                    ins.push_back(new x0::ISrcDst(MOVQ,
+                                static_cast<x0::Dst*>(next->second.assign(vmap)), new x0::Reg("rax")));
+                }
+                ins.push_back(new x0::ISrcDst(MOVQ, new x0::Reg(regs.at(next->first)),
+                            static_cast<x0::Dst*>(next->second.assign(vmap))));
+            }
+            reg2arg.erase(next);
+            next = (it != reg2arg.end()) ? it : reg2arg.begin();
+        }
+    }
+    // if # args >= 6, get the rest from memory
+    for (unsigned int i=v_callers.size(); i<args.size(); i++)
+    {
+        Var v = Var(args.at(i));
+        ins.push_back(new x0::ISrcDst(MOVQ, new x0::Mem("rbp", 8*(2+i-v_callers.size())),
+                    static_cast<x0::Dst*>(v.assign(vmap))));
+    }
+    if (worst_rootstack >= regs.size() && is_default)
     {
         ICall a("_lang_init_rootstack", { new Con((worst_rootstack - regs.size() + 1))}, new Reg("r12"));
         ins.splice(ins.end(), a.assign(vmap));
@@ -203,9 +279,13 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             {
                 ins.push_back(new x0::ISrcDst(ADDQ, new x0::Con(total_offset), new x0::Reg("rsp")));
             }
-            for (unsigned int i=0; i<callee_regs.size(); i++)
+            if (!is_default)
             {
-                ins.push_back(new x0::IDst(POPQ, new x0::Reg(callee_regs.at(callee_regs.size()-i-1))));
+                for (unsigned int i=0; i<callees.size(); i++)
+                {
+                    ins.push_back(new x0::IDst(POPQ, new x0::Reg(callees.at(callees.size()-i-1))));
+                }
+                ins.push_back(new x0::IDst(POPQ, new x0::Reg("rbp")));
             }
             // can't use map to get type because simple programs may optimize
             // the ret part such that it's returning a non-variable (ie: constant)
@@ -448,10 +528,6 @@ list <x0::I*> ICollect::assign(const s2vmap &vmap)
 
 list<x0::I*> ICall::assign(const s2vmap &vmap)
 {
-    static const vector<string> available_regs = 
-    {
-        "rdi", "rsi", "rdx", "rcx", "r8", "r9"
-    };
 
     if (args.size() > 6)
     {
@@ -459,20 +535,20 @@ list<x0::I*> ICall::assign(const s2vmap &vmap)
         exit(1);
     }
     list<x0::I*> a;
-    for (unsigned int i=0; i<available_regs.size(); i++)
+    for (unsigned int i=0; i<callers.size(); i++)
     {
-        a.push_back(new x0::ISrc(PUSHQ, new x0::Reg(available_regs.at(i))));
+        a.push_back(new x0::ISrc(PUSHQ, new x0::Reg(callers.at(i))));
     }
-    for(auto it_pair = make_pair(args.begin(), available_regs.begin());
+    for(auto it_pair = make_pair(args.begin(), callers.begin());
             it_pair.first != args.end();
             ++it_pair.first, ++it_pair.second)
     {
         a.push_back(new x0::ISrcDst(MOVQ, (*it_pair.first)->assign(vmap), new x0::Reg(*it_pair.second)));
     }
     a.push_back(new x0::ICall(this->label));
-    for (unsigned int i=0; i<available_regs.size(); i++)
+    for (unsigned int i=0; i<callers.size(); i++)
     {
-        a.push_back(new x0::IDst(POPQ, new x0::Reg(available_regs.at(available_regs.size()-i-1))));
+        a.push_back(new x0::IDst(POPQ, new x0::Reg(callers.at(callers.size()-i-1))));
     }
     if (dst != nullptr)
     {
