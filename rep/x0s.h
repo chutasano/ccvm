@@ -161,10 +161,10 @@ namespace x0s
     // abstraction of function calls
     struct ICall : I
     {
-        ICall(std::string l, std::list<Arg*> args, Dst* dst) : label(l), args(args), dst(dst) { }
+        ICall(std::string l, std::vector<Arg*> args, Dst* dst) : label(l), args(args), dst(dst) { }
         ~ICall() { for (auto a : args) {delete a;} delete dst; }
         std::string label;
-        std::list<Arg*> args;
+        std::vector<Arg*> args;
         Dst* dst;
         std::list<x0::I*> assign(const s2vmap&);
         std::list<std::string> get_vars();

@@ -91,7 +91,7 @@ list<x0s::I*> Unop::select(x0s::Var* var)
 
 list<x0s::I*> FunCall::select(x0s::Var* var)
 {
-    list<x0s::Arg*> x0sargs;
+    vector<x0s::Arg*> x0sargs;
     for (auto a : args)
     {
         x0sargs.push_back(a->to_arg());

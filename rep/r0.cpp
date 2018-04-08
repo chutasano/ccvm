@@ -581,7 +581,7 @@ c0::Arg* Call::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) c
 {
     string s = gensym("r0Call");
     vars[s] = t;
-    list<c0::Arg*> c0args;
+    vector<c0::Arg*> c0args;
     for (E* e : args)
     {
         c0args.push_back(e->to_c0(vars, stmts));
@@ -601,6 +601,7 @@ int Call::t_check(unordered_map<string, int> vmap)
         {
             int i = 0;
             auto t_vec = fun_type.at(vmap.at(name));
+            assert(args.size() == t_vec.size()-1);
             for (E* e : args)
             {
                 int t_arg = e->t_check(vmap);

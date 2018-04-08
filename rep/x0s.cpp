@@ -1,5 +1,5 @@
-#include <algorithm>
 #include <array>
+#include <algorithm>
 #include <iterator>
 #include <list>
 #include <string>
@@ -59,7 +59,11 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
     }
     // get lifetime of all vars
     unordered_map<string, pair<int, int> > lifetime;
-        
+    // all function arguments should be alive since day one
+    for (auto s : args)
+    {
+        lifetime[s] = make_pair(1, 1);
+    }
     int i = 1; // let i start at 1 to exploit the default constructor
                // of std::pair to check for initial existance
     vector<pair<ICollect*, int> > collects;
@@ -234,7 +238,7 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
             {
                 for (; it != reg2arg.end(); ++it) // search for conflicts
                 {
-                    if ((int)vmap.at(it->second.var).first == next->first)
+                    if ((int)vmap.at(next->second.var).first == it->first)
                     {
                         break;
                     }
@@ -528,24 +532,26 @@ list <x0::I*> ICollect::assign(const s2vmap &vmap)
 
 list<x0::I*> ICall::assign(const s2vmap &vmap)
 {
-
-    if (args.size() > 6)
-    {
-        cerr << "ERROR: more than 6 args for function not supported atm.\n";
-        exit(1);
-    }
     list<x0::I*> a;
     for (unsigned int i=0; i<callers.size(); i++)
     {
         a.push_back(new x0::ISrc(PUSHQ, new x0::Reg(callers.at(i))));
     }
     for(auto it_pair = make_pair(args.begin(), callers.begin());
-            it_pair.first != args.end();
+            it_pair.first != args.end() && it_pair.second != callers.end();
             ++it_pair.first, ++it_pair.second)
     {
         a.push_back(new x0::ISrcDst(MOVQ, (*it_pair.first)->assign(vmap), new x0::Reg(*it_pair.second)));
     }
+    for (unsigned int i=callers.size(); i<args.size(); i++)
+    {
+        a.push_back(new x0::ISrc(PUSHQ, args.at(args.size()-i-1)->assign(vmap)));
+    }
     a.push_back(new x0::ICall(this->label));
+    if (args.size() > callers.size())
+    {
+        a.push_back(new x0::ISrcDst(ADDQ, new x0::Con(8*(args.size()-callers.size())), new x0::Reg("rsp")));
+    }
     for (unsigned int i=0; i<callers.size(); i++)
     {
         a.push_back(new x0::IDst(POPQ, new x0::Reg(callers.at(callers.size()-i-1))));

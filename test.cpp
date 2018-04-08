@@ -47,6 +47,7 @@ type * name = & name ## _LOCAL
 // operation specifics, might be too much work to maintain if we add more operators
 
 #define PLUS(lexp, rexp) BINOP(bplus_ ## lexp ## _ ## rexp, B_PLUS, lexp, rexp)
+#define PLUSN(name, lexp, rexp) BINOP(name, B_PLUS, lexp, rexp)
 #define EQ(lexp, rexp) BINOP(beq_ ## lexp ## _ ## rexp, B_EQ, lexp, rexp)
 #define LT(lexp, rexp) BINOP(blt_ ## lexp ## _ ## rexp, B_LT, lexp, rexp)
 #define GT(lexp, rexp) BINOP(bgt_ ## lexp ## _ ## rexp, B_GT, lexp, rexp)
@@ -472,7 +473,7 @@ void test_all(bool run_only_last = false)
 
     }
 
-    ts("Simple functions");
+    ts("Simple Fibonacci w/ Recursion");
     {
         NUM(0);
         NUM(1);
@@ -494,6 +495,33 @@ void test_all(bool run_only_last = false)
         r0::F main = r0::F("main", { }, callfib);
         r0::P prog = r0::P({fib, main }, "main", 2048);
         t(prog, 55);
+    }
+
+    ts("Function with lots of args");
+    {
+        r0::Var n0 = r0::Var("n0", TNUM); r0::Var n1 = r0::Var("n1", TNUM);
+        r0::Var n2 = r0::Var("n2", TNUM); r0::Var n3 = r0::Var("n3", TNUM);
+        r0::Var n4 = r0::Var("n4", TNUM); r0::Var n5 = r0::Var("n5", TNUM);
+        r0::Var n6 = r0::Var("n6", TNUM); r0::Var n7 = r0::Var("n7", TNUM);
+        r0::Var n8 = r0::Var("n8", TNUM); r0::Var n9 = r0::Var("n9", TNUM);
+        r0::Var n10 = r0::Var("n10", TNUM); r0::Var n11 = r0::Var("n11", TNUM);
+        r0::Var n12 = r0::Var("n12", TNUM);
+        auto rn0 = &n0; auto rn1 = &n1; auto rn2 = &n2; auto rn3 = &n3;
+        auto rn4 = &n4; auto rn5 = &n5; auto rn6 = &n6; auto rn7 = &n7;
+        auto rn8 = &n8; auto rn9 = &n9; auto rn10 = &n10; auto rn11 = &n11;
+        auto rn12 = &n12;
+        PLUSN(p01, rn0, rn1); PLUSN(p02, p01, rn2); PLUSN(p03, p02, rn3);
+        PLUSN(p04, p03, rn4); PLUSN(p05, p04, rn5); PLUSN(p06, p05, rn6);
+        PLUSN(p07, p06, rn7); PLUSN(p08, p07, rn8); PLUSN(p09, p08, rn9);
+        PLUSN(p010, p09, rn10); PLUSN(p011, p010, rn11);  PLUSN(p012, p011, rn12);
+        r0::F add_12_nums = r0::F("add_12_nums",
+                {n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12},
+                TNUM, p012);
+        NUM(20);
+        UPTR(r0::Call, call_12_nums, "add_12_nums", {n20,n20,n20,n20,n20,n20,n20,n20,n20,n20,n20,n20, n20});
+        r0::F main = r0::F("main", { }, call_12_nums);
+        r0::P prog = r0::P({add_12_nums, main }, "main", 2048);
+        t(prog, 20*13);
     }
     cout << "Total tests failed: " << fails << endl;
 }
