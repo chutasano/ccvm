@@ -77,7 +77,7 @@ static int add_ftype(vector<int> ftype)
     return t;
 }
 
-P::P(std::vector<F> fs, string to_run, int heap_s) : funcs(fs), to_run(to_run)
+P::P(std::vector<F> fs, string to_run, int heap_s = 2048) : funcs(fs), to_run(to_run)
 {
     if (heap_s%8 != 0 || heap_s < 0)
     {
@@ -92,7 +92,7 @@ P::P(std::vector<F> fs, string to_run, int heap_s) : funcs(fs), to_run(to_run)
     t = TUNKNOWN;
 }
 
-P::P(E* ee, int heap_s)
+P::P(E* ee, int heap_s = 2048)
 {
     funcs.push_back(F("main", { }, TUNKNOWN, ee));
     to_run = "main";
