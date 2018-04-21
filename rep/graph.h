@@ -118,7 +118,7 @@ struct Node
             this->n = offset + rootstack_count++;
         }
     }
-    std::pair<std::string, std::pair<unsigned int, stack_e> > get_mapping()
+    std::pair<std::string, std::pair<unsigned int, stack_e> > get_mapping() const
     {
         if (n == -1)
         {
@@ -171,7 +171,7 @@ struct NodeList
     NodeList() { }
     ~NodeList()
     {
-        for (auto p : m)
+        for (const auto &p : m)
         {
             delete p.second;
         }
@@ -185,16 +185,16 @@ struct NodeList
     }
     void add_edges(std::string src, std::list<std::string> dsts)
     {
-        for (auto d : dsts)
+        for (const std::string &d : dsts)
         {
             m.at(src)->add_neighbor(m.at(d));
             m.at(d)->add_neighbor(m.at(src));
         }
     }
-    std::unordered_map<std::string, std::pair<unsigned int, stack_e> > get_mapping()
+    std::unordered_map<std::string, std::pair<unsigned int, stack_e> > get_mapping() const
     {
         std::unordered_map<std::string, std::pair<unsigned int, stack_e> > varmap;
-        for (auto p : m)
+        for (const auto &p : m)
         {
             varmap.insert(p.second->get_mapping());
         }
@@ -203,7 +203,7 @@ struct NodeList
     void do_naive(int num_reg)
     {
         int i = 0;
-        for (auto p : m)
+        for (auto &p : m)
         {
             p.second->force(i++, num_reg);
         }
@@ -211,7 +211,7 @@ struct NodeList
     void do_naive2(int num_reg)
     {
         int i = 0;
-        for (auto p : m)
+        for (auto &p : m)
         {
             p.second->force(i++, 0);
         }
@@ -219,7 +219,7 @@ struct NodeList
     void do_smart(unsigned int num_reg)
     {
         std::priority_queue<Node*, std::vector<Node*>, node_strict_less > pq;
-        for (auto p : m)
+        for (auto &p : m)
         {
             pq.push(p.second);
         }

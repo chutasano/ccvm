@@ -20,35 +20,35 @@ namespace c0
     {
         virtual ~Arg() { }
         std::list<x0s::I*> select(x0s::Var*);
-        virtual x0s::Arg* to_arg() = 0;
+        virtual x0s::Arg* to_arg() const = 0;
     };
 
     struct Var : Arg
     {
         Var(std::string varname) { name = varname; }
         std::string name;
-        x0s::Arg* to_arg();
+        x0s::Arg* to_arg() const;
     };
 
     struct GlobalVar : Arg
     {
         GlobalVar(std::string varname) { name = varname; }
         std::string name;
-        x0s::Arg* to_arg();
+        x0s::Arg* to_arg() const;
     };
 
     struct Num : Arg
     {
         Num(int64_t v) { value = v; }
         int64_t value;
-        x0s::Arg* to_arg();
+        x0s::Arg* to_arg() const;
     };
 
     struct Global : Arg
     {
         Global(std::string varname) : name(varname) { }
         std::string name;
-        x0s::Arg* to_arg();
+        x0s::Arg* to_arg() const;
     };
 
     // abstract statement either contains an if or a statement
@@ -146,25 +146,31 @@ namespace c0
 
     struct F
     {
-        F(std::string name, std::unordered_map<std::string, int> v, std::vector<std::string> as, std::vector<AS*> s, Arg* a, int t) : name(name), vars(v), args(as), stmts(s), arg(a), t(t)  { }
+        F(std::string name,
+          std::unordered_map<std::string, int> v,
+          std::vector<std::string> as,
+          std::vector<AS*> s,
+          Arg* a, int t) :
+            name(name), vars(v), args(as), stmts(s), arg(a), t(t)  { }
         std::string name;
         std::unordered_map<std::string, int> vars;
         std::vector<std::string> args;
         std::vector<AS*> stmts;
         Arg* arg; //ret
         int t;
-        x0s::F select();
+        x0s::F select() const;
    };
 
     struct P
     {
-        P(std::vector<F> funcs, std::string to_run, int heap_size) : funcs(funcs), to_run(to_run), heap_size(heap_size) { }
-        ~P() { for (F f : funcs) for (AS* s : f.stmts) delete s;
+        P(std::vector<F> funcs, std::string to_run, int heap_size) :
+            funcs(funcs), to_run(to_run), heap_size(heap_size) { }
+        ~P() { for (F &f : funcs) for (AS* s : f.stmts) delete s;
         }
         std::vector<F> funcs;
         std::string to_run;
         int heap_size;
-        x0s::P select();
+        x0s::P select() const;
     };
 }
 

@@ -15,7 +15,7 @@ string P::to_asm()
 {
     stringstream ss;
     ss << ".section .data" << endl;
-    for (auto t : globals)
+    for (const Tag &t : globals)
     {
         ss << "    " << ".globl " << t.name << endl
            << "    " << t.name << ":" << endl
@@ -200,7 +200,7 @@ void P::fix()
     }
 }
 
-string Tag::to_asm()
+string Tag::to_asm() const
 {
     stringstream ss;
     for (auto v : vals)
@@ -209,3 +209,4 @@ string Tag::to_asm()
     }
     return ss.str();
 }
+

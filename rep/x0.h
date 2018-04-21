@@ -141,7 +141,7 @@ namespace x0
         Tag(std::string name, int val) : name(name), vals({val}) { }
         std::string name;
         std::vector<int> vals;
-        std::string to_asm();
+        std::string to_asm() const;
     };
 
     // program container for X0

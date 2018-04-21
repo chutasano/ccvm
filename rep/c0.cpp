@@ -10,17 +10,17 @@ using namespace c0;
 
 static unordered_map<string, unsigned int> count;
 
-x0s::Arg* Var::to_arg()
+x0s::Arg* Var::to_arg() const
 {
     return new x0s::Var(this->name);
 }
 
-x0s::Arg* GlobalVar::to_arg()
+x0s::Arg* GlobalVar::to_arg() const
 {
     return new x0s::Global(this->name);
 }
 
-x0s::Arg* Num::to_arg()
+x0s::Arg* Num::to_arg() const
 {
     return new x0s::Con(this->value);
 }
@@ -187,7 +187,7 @@ list<x0s::I*> If::select()
     return { new x0s::IIf(l, theni, elsei) };
 }
 
-x0s::F F::select()
+x0s::F F::select() const
 {
     list<x0s::I*> instrs;
     for (auto s : this->stmts)
@@ -199,10 +199,10 @@ x0s::F F::select()
     return x0s::F(name, instrs, vars, args, t);
 }
 
-x0s::P P::select()
+x0s::P P::select() const
 {
     vector<x0s::F> x0sfs;
-    for (F f : funcs)
+    for (const F &f : funcs)
     {
         x0sfs.push_back(f.select());
     }
