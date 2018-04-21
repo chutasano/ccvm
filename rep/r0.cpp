@@ -122,7 +122,7 @@ P::P(const P &obj)
 
 void P::deep_delete()
 {
-    for (F f : funcs)
+    for (F &f : funcs)
     {
         f.deep_delete();
     }
@@ -154,7 +154,9 @@ c0::P P::flatten() const
     vector<c0::F> cfs;
     for (const F &f : funcs)
     {
-        cfs.push_back(f.flatten());
+        vector<c0::F> c0f;
+        f.flatten(c0f);
+        cfs.insert(end(cfs), begin(c0f), end(c0f));
     }
     return c0::P(cfs, to_run, heap_size);
 }
@@ -236,7 +238,8 @@ bool F::is_unique() const
     return varnames.size() == uniquenames.size();
 }
 
-c0::F F::flatten() const
+// P is expected to feed in an empty vector
+void F::flatten(vector<c0::F> &c0fs) const
 {
     unordered_map<string, int> vars;
     vector<string> args_names;
@@ -246,13 +249,13 @@ c0::F F::flatten() const
         args_names.push_back(v.name);
     }
     vector<c0::AS*> stmts;
-    c0::Arg* a = e->to_c0(vars, stmts);
+    c0::Arg* a = e->to_c0(vars, stmts, c0fs);
     if (t == TERROR)
     {
         cerr << "Type check failed\n";
         exit(1);
     }
-    return c0::F(name, vars, args_names, stmts, a, t);
+    c0fs.push_back(c0::F(name, vars, args_names, stmts, a, t));
 }
 
 void F::generate_fun_type(unordered_map<string, int> &vars)
@@ -314,12 +317,12 @@ void Num::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Num::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Num::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
      return new c0::Num(this->value);
 }
 
-int Num::t_check(unordered_map<string, int> vmap)
+int Num::t_check(unordered_map<string, int> &vmap)
 {
     t = TNUM;
     return TNUM;
@@ -335,12 +338,12 @@ void Bool::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Bool::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Bool::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
      return new c0::Num(static_cast<int>(this->value));
 }
 
-int Bool::t_check(unordered_map<string, int> vmap)
+int Bool::t_check(unordered_map<string, int> &vmap)
 {
     t = TBOOL;
     return TBOOL;
@@ -356,7 +359,7 @@ void Read::uniquify(unordered_map<string, string> m)
     return;
 }
 
-c0::Arg* Read::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Read::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0Read");
     vars[s] = t;
@@ -364,7 +367,7 @@ c0::Arg* Read::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) c
     return new c0::Var(s);
 }
 
-int Read::t_check(unordered_map<string, int> vmap)
+int Read::t_check(unordered_map<string, int> &vmap)
 {
     t = TNUM;
     return TNUM;
@@ -381,17 +384,17 @@ void Binop::uniquify(unordered_map<string, string> m)
     this->r->uniquify(m);
 }
 
-c0::Arg* Binop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Binop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0Binop");
     vars[s] = t;
     stmts.push_back(new c0::S(s, new c0::Binop(this->op,
-                    this->l->to_c0(vars, stmts),
-                    this->r->to_c0(vars, stmts))));
+                    this->l->to_c0(vars, stmts, c0fs),
+                    this->r->to_c0(vars, stmts, c0fs))));
     return new c0::Var(s);
 }
 
-int Binop::t_check(unordered_map<string, int> vmap)
+int Binop::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -449,15 +452,15 @@ void Unop::uniquify(unordered_map<string, string> m)
     this->v->uniquify(m);
 }
 
-c0::Arg* Unop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Unop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0Unop");
     vars[s] = t;
-    stmts.push_back(new c0::S(s, new c0::Unop(this->op, this->v->to_c0(vars, stmts))));
+    stmts.push_back(new c0::S(s, new c0::Unop(this->op, this->v->to_c0(vars, stmts, c0fs))));
     return new c0::Var(s);
 }
 
-int Unop::t_check(unordered_map<string, int> vmap)
+int Unop::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -522,12 +525,12 @@ void Var::uniquify(unordered_map<string, string> m)
     }
 }
 
-c0::Arg* Var::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Var::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     return new c0::Var(this->name);
 }
 
-int Var::t_check(unordered_map<string, int> vmap)
+int Var::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -545,12 +548,12 @@ void GlobalVar::uniquify(unordered_map<string, string> m)
 {
 }
 
-c0::Arg* GlobalVar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* GlobalVar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     return new c0::GlobalVar(this->name);
 }
 
-int GlobalVar::t_check(unordered_map<string, int> vmap)
+int GlobalVar::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -586,20 +589,20 @@ void Call::uniquify(unordered_map<string, string> m)
     }
 }
 
-c0::Arg* Call::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Call::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0Call");
     vars[s] = t;
     vector<c0::Arg*> c0args;
     for (E* e : args)
     {
-        c0args.push_back(e->to_c0(vars, stmts));
+        c0args.push_back(e->to_c0(vars, stmts, c0fs));
     }
     stmts.push_back(new c0::S(s, new c0::FunCall(name, c0args)));
     return new c0::Var(s);
 }
 
-int Call::t_check(unordered_map<string, int> vmap)
+int Call::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -658,14 +661,14 @@ void Let::uniquify(unordered_map<string, string> m)
     this->be->uniquify(m);
 }
 
-c0::Arg* Let::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Let::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
-    stmts.push_back(new c0::S(this->name, this->ve->to_c0(vars, stmts)));
+    stmts.push_back(new c0::S(this->name, this->ve->to_c0(vars, stmts, c0fs)));
     vars[this->name] = this->ve->t;
-    return this->be->to_c0(vars, stmts);
+    return this->be->to_c0(vars, stmts, c0fs);
 }
 
-int Let::t_check(unordered_map<string, int> vmap)
+int Let::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -687,7 +690,7 @@ void If::uniquify(unordered_map<string, string> m)
     elsee->uniquify(m);
 }
 
-c0::Arg* If::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* If::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0If");
     vars[s] = t;
@@ -696,24 +699,24 @@ c0::Arg* If::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) con
     if (typeid(*conde) == typeid(Binop))
     {
         Binop* cb = static_cast<Binop*>(conde);
-        c0::Arg* l = cb->l->to_c0(vars, stmts);
-        c0::Arg* r = cb->r->to_c0(vars, stmts);
+        c0::Arg* l = cb->l->to_c0(vars, stmts, c0fs);
+        c0::Arg* r = cb->r->to_c0(vars, stmts, c0fs);
         c0bin = new c0::Binop(cb->op, l, r);
     }
     else
     {
-        c0::Arg* condv = conde->to_c0(vars, stmts);
+        c0::Arg* condv = conde->to_c0(vars, stmts, c0fs);
         c0bin = new c0::Binop(B_EQ, new c0::Num(1), condv);
     }
     vector<c0::AS*> thenstmts;
     vector<c0::AS*> elsestmts;
-    c0::Arg* thenv = thene->to_c0(vars, thenstmts);
-    c0::Arg* elsev = elsee->to_c0(vars, elsestmts);
+    c0::Arg* thenv = thene->to_c0(vars, thenstmts, c0fs);
+    c0::Arg* elsev = elsee->to_c0(vars, elsestmts, c0fs);
     stmts.push_back(new c0::If(s, c0bin , thenv, thenstmts, elsev, elsestmts));
     return new c0::Var(s);
 }
 
-int If::t_check(unordered_map<string, int> vmap)
+int If::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -764,7 +767,7 @@ void Vector::uniquify(unordered_map<string, string> m)
     }
 }
 
-c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0Vector");
     vars[s] = t;
@@ -774,13 +777,13 @@ c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts)
     int i = 0;
     for (E* e : elist)
     {
-        stmts.push_back(new c0::S(schild, new c0::VecSet(new c0::Var(s), i, e->to_c0(vars, stmts))));
+        stmts.push_back(new c0::S(schild, new c0::VecSet(new c0::Var(s), i, e->to_c0(vars, stmts, c0fs))));
         i++;
     }
     return new c0::Var(s);
 }
 
-int Vector::t_check(unordered_map<string, int> vmap)
+int Vector::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -822,7 +825,7 @@ E* Vector::desugar()
     return this;
 }
 
-int VectorRef::t_check(unordered_map<string, int> vmap)
+int VectorRef::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -833,15 +836,16 @@ int VectorRef::t_check(unordered_map<string, int> vmap)
     return t;
 }
 
-c0::Arg* VectorRef::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* VectorRef::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0VecRef");
     vars[s] = t;
-    stmts.push_back(new c0::S(s, new c0::VecRef(static_cast<c0::Var*>(vec->to_c0(vars, stmts)), index)));
+    stmts.push_back(new c0::S(s, new c0::VecRef(static_cast<c0::Var*>(vec->to_c0(vars, stmts, c0fs)),
+                                                index)));
     return new c0::Var(s);
 }
 
-int VectorSet::t_check(unordered_map<string, int> vmap)
+int VectorSet::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
@@ -859,12 +863,13 @@ int VectorSet::t_check(unordered_map<string, int> vmap)
     return t;
 }
 
-c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0VecSet");
     vars[s] = t;
     stmts.push_back(new c0::S(s,
-                new c0::VecSet(static_cast<c0::Var*>(vec->to_c0(vars, stmts)), index, asg->to_c0(vars, stmts))));
+                new c0::VecSet(static_cast<c0::Var*>(vec->to_c0(vars, stmts, c0fs)),
+                               index, asg->to_c0(vars, stmts, c0fs))));
     return new c0::Var(s);
 }
 
@@ -880,17 +885,25 @@ void Lambda::uniquify(unordered_map<string, string> m)
     body->uniquify(m);
 }
 
-int Lambda::t_check(unordered_map<string, int> vmap)
+int Lambda::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
+        int ret_t = body->t_check(vmap);
+        vector<int> this_ftype;
+        for (const string &s : args)
+        {
+            this_ftype.push_back(vmap.at(s));
+        }
+        this_ftype.push_back(ret_t);
+        t = add_ftype(this_ftype);
     }
     return t;
 }
 
-c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
-    string s = gensym("r0VecSet");
+    string s = gensym("r0Lambda");
     vars[s] = t;
     return new c0::Var(s);
 }
@@ -907,13 +920,13 @@ void Sugar::uniquify(unordered_map<string, string> a)
     exit(10);
 }
 
-int Sugar::t_check(unordered_map<string, int> a)
+int Sugar::t_check(unordered_map<string, int> &a)
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);
 }
 
-c0::Arg* Sugar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+c0::Arg* Sugar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);
