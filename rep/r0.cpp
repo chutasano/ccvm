@@ -131,7 +131,7 @@ void P::deep_delete()
 void P::uniquify()
 {
     gensym("", true);
-    for (F f : funcs)
+    for (F &f : funcs)
     {
         f.uniquify();
     }
@@ -205,6 +205,11 @@ F F::clone() const
 void F::uniquify()
 {
     unordered_map<string, string> varmap;
+    for (Var &v : args)
+    {
+        varmap[v.name] = gensym(v.name);
+        v.name = varmap[v.name];
+    }
     this->e->uniquify(varmap);
 }
 
@@ -235,7 +240,7 @@ c0::F F::flatten() const
 {
     unordered_map<string, int> vars;
     vector<string> args_names;
-    for (Var v : args)
+    for (const Var &v : args)
     {
         vars[v.name] = v.t;
         args_names.push_back(v.name);
@@ -255,7 +260,7 @@ void F::generate_fun_type(unordered_map<string, int> &vars)
     vector<int> ftype;
     if (t < TFUN)
     {
-        for (Var v : args)
+        for (const Var &v : args)
         {
             if (v.t == TUNKNOWN)
             {
@@ -275,7 +280,7 @@ void F::generate_fun_type(unordered_map<string, int> &vars)
 
 void F::type_check(unordered_map<string, int> vars)
 {
-    for (Var v : args)
+    for (const Var &v : args)
     {
         vars[v.name] = v.t;
     }
@@ -502,14 +507,18 @@ Var* Var::clone() const
 
 void Var::uniquify(unordered_map<string, string> m)
 {
-    const auto &it = m.find(this->name); // FIXME const iterator will be the "right"
-                                  // thing to do instead of auto
+    const auto &it = m.find(this->name);
     if (it != m.end())
     {
 #ifdef DEBUG
         cout << "Uniquify var: changing " << this->name << " to " << it->second << endl;
 #endif
         this->name = it->second;
+    }
+    else
+    {
+        cerr << "Uniquify var: var ref DNE?\n";
+        exit(1);
     }
 }
 
@@ -856,6 +865,33 @@ c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
     vars[s] = t;
     stmts.push_back(new c0::S(s,
                 new c0::VecSet(static_cast<c0::Var*>(vec->to_c0(vars, stmts)), index, asg->to_c0(vars, stmts))));
+    return new c0::Var(s);
+}
+
+void Lambda::uniquify(unordered_map<string, string> m)
+{
+    // manually uniquify function args
+    for (auto &s : args)
+    {
+        // overwrite if exists
+        m[s] = gensym(s);
+        s = m[s];
+    }
+    body->uniquify(m);
+}
+
+int Lambda::t_check(unordered_map<string, int> vmap)
+{
+    if (t == TUNKNOWN)
+    {
+    }
+    return t;
+}
+
+c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts) const
+{
+    string s = gensym("r0VecSet");
+    vars[s] = t;
     return new c0::Var(s);
 }
 

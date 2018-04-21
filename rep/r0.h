@@ -213,6 +213,20 @@ namespace r0
         E* desugar() { vec = vec->desugar(); asg = asg->desugar(); return this; };
     };
 
+    struct Lambda : E
+    {
+        Lambda(std::vector<std::string> args, E* body) : args(args), body(body) { }
+        std::vector<std::string> args;
+        E* body;
+        std::list<E*> get_childs() { return { body }; }
+        void uniquify(std::unordered_map<std::string, std::string> m);
+        int t_check(std::unordered_map<std::string, int>);
+        c0::Arg* to_c0(std::unordered_map<std::string, int> &vars, std::vector<c0::AS*> &stmts) const;
+        Lambda* clone() const { return new Lambda(args, body->clone()); }
+        void deep_delete() { body->deep_delete(); delete body; }
+        E* desugar() { body = body->desugar(); return this; };
+    };
+
 
     /********* Below are syntactic sugars *********/
     struct Sugar : E

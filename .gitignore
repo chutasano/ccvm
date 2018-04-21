@@ -2,3 +2,5 @@
 main
 .*.swp
 woof
+compile_commands.json
+
