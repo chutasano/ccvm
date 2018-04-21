@@ -4,3 +4,6 @@ IMPORTANT: need to actually do garbage collection (all implementation left in
 lib.c AFAIK. Hopefully no weirdness)
 
 Rootstack is not properly accounted for across function calls. Need to fix
+
+Global function names need to be uniquified(?)
+

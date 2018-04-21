@@ -905,6 +905,16 @@ c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts,
 {
     string s = gensym("r0Lambda");
     vars[s] = t;
+    std::vector<Var> fargs;
+    const vector<int> &ft = fun_type.at(t);
+    int i=0;
+    for (const string &s : args)
+    {
+        fargs.emplace_back(s, ft.at(i));
+        i++;
+    }
+    F f(s, fargs, ft.back(), body);
+    f.flatten(c0fs);
     return new c0::Var(s);
 }
 
