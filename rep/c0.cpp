@@ -1,5 +1,6 @@
 #include <iostream>
 #include <list>
+#include <typeinfo>
 #include <string>
 #include <unordered_map>
 
@@ -27,12 +28,21 @@ x0s::Arg* Num::to_arg() const
 
 list<x0s::I*> Arg::select(x0s::Var* var)
 {
-    return { new x0s::ISrcDst(MOVQ, this->to_arg(), var) };
+    // moving globals should be done as lea because globals are always
+    // memory locations
+    if (typeid(*this) == typeid(GlobalVar))
+    {
+        return { new x0s::ISrcDst(LEAQ, this->to_arg(), var) };
+    }
+    else
+    {
+        return { new x0s::ISrcDst(MOVQ, this->to_arg(), var) };
+    }
 }
 
 list<x0s::I*> Read::select(x0s::Var* var)
 {
-    return { new x0s::ICall("_lang_read_num", { }, var) };
+    return { new x0s::ICall(new x0s::Global("_lang_read_num"), { }, var) };
 }
 
 list<x0s::I*> Binop::select(x0s::Var* var)
@@ -96,7 +106,7 @@ list<x0s::I*> FunCall::select(x0s::Var* var)
     {
         x0sargs.push_back(a->to_arg());
     }
-    return { new x0s::ICall(name, x0sargs, var) };
+    return { new x0s::ICall(func->to_arg(), x0sargs, var) };
 }
 
 list<x0s::I*> Alloc::select(x0s::Var* var)

@@ -86,9 +86,9 @@ namespace c0
 
     struct FunCall : E
     {
-        FunCall(std::string name, std::vector<Arg*> args) : name(name), args(args) {  }
+        FunCall(Arg* func, std::vector<Arg*> args) : func(func), args(args) {  }
         ~FunCall() { for (auto a : args) delete a; }
-        std::string name;
+        Arg* func;
         std::vector<Arg*> args;
         std::list<x0s::I*> select(x0s::Var*);
     };

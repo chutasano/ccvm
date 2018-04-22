@@ -106,7 +106,13 @@ string IJmp::to_asm()
 
 string ICall::to_asm()
 {
-    return "CALLQ\t" + this->label;
+    string ret =  "CALLQ\t";
+    if (typeid(*f) == typeid(Reg))
+    {
+        ret += "*";
+    }
+    ret += f->to_string();
+    return ret;
 }
 
 string IRet::to_asm()
@@ -192,6 +198,17 @@ void P::fix()
                 }
                 ++it;
             }
+        }
+        else if (typeid(**it) == typeid(ICall))
+        {
+            auto c = static_cast<ICall*>(*it);
+            if (typeid(*(c->f)) == typeid(Mem))
+            {
+                ISrcDst* leaq = new ISrcDst(LEAQ, c->f, new Reg("rax"));
+                c->f = new Reg("rax");
+                it = this->instr.insert(it, leaq);
+            }
+            ++it;
         }
         else
         {

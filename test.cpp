@@ -41,8 +41,9 @@ type * name = & name ## _LOCAL
 // UNOP
 #define UNOP(...) UPTR(r0::Unop, __VA_ARGS__)
 
-// UNOP
 #define IF(...) UPTR(r0::If, __VA_ARGS__)
+
+#define LAMBDA(...) UPTR(r0::Lambda, __VA_ARGS__)
 
 // operation specifics, might be too much work to maintain if we add more operators
 
@@ -523,6 +524,20 @@ void test_all(bool run_only_last = false)
         r0::P prog = r0::P({add_12_nums, main }, "main", 2048);
         t(prog, 20*13);
     }
+
+    ts("Lambda (no closure)");
+    {
+        NUM(123); NUM(321); NUM(111);
+        VAR(x1); VAR(x2); VAR(x3);
+        PLUS(vx2, vx3);
+        PLUSN(sum3, vx1, bplus_vx2_vx3);
+        LAMBDA(add3num, {"x1","x2","x3"}, sum3);
+        VAR(r0add3num);
+        UPTR(r0::Call, calladd3, vr0add3num, {n123, n321, n111});
+        LET(main_test, r0add3num, add3num, calladd3);
+        t(main_test, 123+321+111);
+    }
+
     cout << "Total tests failed: " << fails << endl;
 }
 

@@ -77,6 +77,12 @@ static int add_ftype(vector<int> ftype)
     return t;
 }
 
+inline void E::fix_trustme(int t, unordered_map<string, int> &vmap)
+{
+    assert(this->t == TTRUSTME);
+    this->t = t;
+}
+
 P::P(std::vector<F> fs, string to_run, int heap_s = 2048) : funcs(fs), to_run(to_run)
 {
     if (heap_s%8 != 0 || heap_s < 0)
@@ -131,9 +137,19 @@ void P::deep_delete()
 void P::uniquify()
 {
     gensym("", true);
+    unordered_map<string, string> varmap;
     for (F &f : funcs)
     {
-        f.uniquify();
+        if (to_run != f.name)
+        {
+            varmap[f.name] = gensym(f.name);
+            f.name = varmap[f.name];
+        }
+    }
+    
+    for (F &f : funcs)
+    {
+        f.uniquify(varmap);
     }
 }
 
@@ -204,9 +220,8 @@ F F::clone() const
     return F(name, args, t, e_copied);
 }
 
-void F::uniquify()
+void F::uniquify(unordered_map<string, string> varmap)
 {
-    unordered_map<string, string> varmap;
     for (Var &v : args)
     {
         varmap[v.name] = gensym(v.name);
@@ -400,43 +415,50 @@ int Binop::t_check(unordered_map<string, int> &vmap)
     {
         int lt = this->l->t_check(vmap);
         int rt = this->r->t_check(vmap);
-        if (lt == TERROR || rt == TERROR)
+        if (lt == TERROR || lt == TUNKNOWN ||
+            rt == TERROR || rt == TUNKNOWN)
         {
             cerr << "Binop: args have unresolvable types\n";
             t = TERROR;
         }
+        int lt_expected, rt_expected;
         if (this->op == B_PLUS) // num,num -> num
         {
-            if (lt == TNUM && rt == TNUM)
-            {
-                t = TNUM;
-            }
-            else
-            {
-                cerr << "Expected num,num got " << lt << ", " << rt << endl;
-                t = TERROR;
-            }
+            lt_expected = TNUM;
+            rt_expected = TNUM;
+            t = TNUM;
         }
         else if ((this->op == B_EQ) || // num, num -> bool
-                (this->op == B_LT) ||
-                (this->op == B_GT) ||
-                (this->op == B_LE) ||
-                (this->op == B_GE))
+                 (this->op == B_LT) ||
+                 (this->op == B_GT) ||
+                 (this->op == B_LE) ||
+                 (this->op == B_GE))
         {
-            if (lt == TNUM && rt == TNUM)
-            {
-                t = TBOOL;
-            }
-            else
-            {
-                cerr << "Expected num,num got " << lt << ", " << rt << endl;
-                t = TERROR;
-            }
+            lt_expected = TNUM;
+            rt_expected = TNUM;
+            t = TBOOL;
         }
         else
         {
             cerr << "Unsupported operator: " << this->op << endl;
             t = TERROR;
+        }
+        if (lt == TTRUSTME)
+        {
+            this->l->fix_trustme(lt_expected, vmap);
+            lt = lt_expected;
+        }
+        if (rt == TTRUSTME)
+        {
+            this->r->fix_trustme(rt_expected, vmap);
+            rt = rt_expected;
+        }
+        if (lt != lt_expected || rt != rt_expected)
+        {
+                cerr << "Expected " << type2name(lt_expected) <<  ", "
+                     << type2name(rt_expected) << "... got "
+                     << type2name(lt) << ", " << type2name(rt) << endl;
+                t = TERROR;
         }
     }
     return t;
@@ -465,39 +487,37 @@ int Unop::t_check(unordered_map<string, int> &vmap)
     if (t == TUNKNOWN)
     {
         int vt = this->v->t_check(vmap);
-        if (vt == TERROR)
+        int vt_expected;
+        if (vt == TERROR || vt ==TUNKNOWN)
         {
             cerr << "Unop: child has unresolved type\n";
             t = TERROR;
         }
         if (this->op == U_NEG) // num -> num
         {
-            if (vt == TNUM)
-            {
-                t = TNUM;
-            }
-            else
-            {
-                cerr << "U_NEG expects a TNUM\n";
-                t = TERROR;
-            }
+            vt_expected = TNUM;
+            t = TNUM;
         }
         else if (this->op == U_NOT) // bool -> bool
         {
-            if (vt == TBOOL)
-            {
-                t = TBOOL;
-            }
-            else
-            {
-                cerr << "U_NOT expects a TBOOL\n";
-                t = TERROR;
-            }
+            vt_expected = TBOOL;
+            t = TBOOL;
         }
         else
         {
             cerr << "Bad unary op " << this->op << endl;
             t = TERROR;
+        }
+        if (vt == TTRUSTME)
+        {
+            this->v->fix_trustme(vt_expected, vmap);
+            vt = vt_expected;
+        }
+        if (vt != vt_expected)
+        {
+                cerr << "Expected " << type2name(vt_expected) <<  ", "
+                     << "... got "  << type2name(vt) << endl;
+                t = TERROR;
         }
     }
     return t;
@@ -520,7 +540,7 @@ void Var::uniquify(unordered_map<string, string> m)
     }
     else
     {
-        cerr << "Uniquify var: var ref DNE?\n";
+        cerr << "Uniquify var: var ref DNE: " << this->name << "\n";
         exit(1);
     }
 }
@@ -539,6 +559,13 @@ int Var::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
+inline void Var::fix_trustme(int t, unordered_map<string, int> &vmap)
+{
+    assert(this->t == TTRUSTME);
+    this->t = t;
+    vmap.at(name) = t;
+}
+
 GlobalVar* GlobalVar::clone() const
 {
     return new GlobalVar(this->name);
@@ -546,6 +573,11 @@ GlobalVar* GlobalVar::clone() const
 
 void GlobalVar::uniquify(unordered_map<string, string> m)
 {
+    // global functions need to be uniquified, check if it exists in map
+    if (m.find(name) != m.end())
+    {
+        name = m.at(name);
+    }
 }
 
 c0::Arg* GlobalVar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
@@ -557,7 +589,15 @@ int GlobalVar::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
-        t = TNUM;
+        if (vmap.find(name) != vmap.end())
+        {
+            t = vmap.at(name);
+        }
+        else
+        {
+            cerr << "GlobalVar without known type. Investigate this\n";
+            assert(0);
+        }
     }
     return t;
 }
@@ -565,15 +605,17 @@ int GlobalVar::t_check(unordered_map<string, int> &vmap)
 Call* Call::clone() const
 {
     list<E*> ecopy;
-    for (E* e : args)
+    for (const E* e : args)
     {
         ecopy.push_back(e->clone());
     }
-    return new Call(name, ecopy, static_cast<type>(t));
+    return new Call(func->clone(), ecopy, static_cast<type>(t));
 }
 
 void Call::deep_delete()
 {
+    func->deep_delete();
+    delete func;
     for (E* e : args)
     {
         e->deep_delete();
@@ -583,6 +625,7 @@ void Call::deep_delete()
 
 void Call::uniquify(unordered_map<string, string> m)
 {
+    func->uniquify(m);
     for (E* e : args)
     {
         e->uniquify(m);
@@ -598,7 +641,7 @@ c0::Arg* Call::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, v
     {
         c0args.push_back(e->to_c0(vars, stmts, c0fs));
     }
-    stmts.push_back(new c0::S(s, new c0::FunCall(name, c0args)));
+    stmts.push_back(new c0::S(s, new c0::FunCall(func->to_c0(vars, stmts, c0fs), c0args)));
     return new c0::Var(s);
 }
 
@@ -612,7 +655,8 @@ int Call::t_check(unordered_map<string, int> &vmap)
         if (t_tentative == TUNKNOWN)
         {
             int i = 0;
-            auto t_vec = fun_type.at(vmap.at(name));
+            //auto t_vec = fun_type.at(vmap.at(name));
+            const auto &t_vec = fun_type.at(func->t_check(vmap));
             assert(args.size() == t_vec.size()-1);
             for (E* e : args)
             {
@@ -889,6 +933,10 @@ int Lambda::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
     {
+        for (const string &s : args)
+        {
+            vmap[s] = TTRUSTME;
+        }
         int ret_t = body->t_check(vmap);
         vector<int> this_ftype;
         for (const string &s : args)
@@ -913,9 +961,10 @@ c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts,
         fargs.emplace_back(s, ft.at(i));
         i++;
     }
-    F f(s, fargs, ft.back(), body);
+    F f(s, fargs, t, body);
+    // type check is already complete
     f.flatten(c0fs);
-    return new c0::Var(s);
+    return new c0::GlobalVar(s);
 }
 
 list<E*> Sugar::get_childs()

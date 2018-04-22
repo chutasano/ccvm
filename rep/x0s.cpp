@@ -195,9 +195,10 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
     }
     else
     {
-        ICall init_heap_func("_lang_init_heap", { new Con(heap_size) }, new Reg("r15"));
+        ICall init_heap_func(new Global("_lang_init_heap")
+                             , { new Con(heap_size) }, new Reg("r15"));
         ins.splice(ins.end(), init_heap_func.assign(vmap));
-        ICall dbg_func("_lang_debug", { }, nullptr);
+        ICall dbg_func(new Global("_lang_debug"), { }, nullptr);
         ins.splice(ins.end(), dbg_func.assign(vmap));
     }
     int total_offset;
@@ -268,7 +269,9 @@ list<x0::I*> F::assign(bool is_default, int heap_size)
     }
     if (worst_rootstack >= regs.size() && is_default)
     {
-        ICall a("_lang_init_rootstack", { new Con((worst_rootstack - regs.size() + 1))}, new Reg("r12"));
+        ICall a(new Global("_lang_init_rootstack"),
+                { new Con((worst_rootstack - regs.size() + 1))},
+                new Reg("r12"));
         ins.splice(ins.end(), a.assign(vmap));
         //ins.push_back(new x0::ISrcDst(SUBQ, new x0::Con(8*(worst_rootstack - regs.size() + 1)), new x0::Reg("r12")));
     }
@@ -511,7 +514,9 @@ list <x0::I*> ICollect::assign(const s2vmap &vmap)
     {
         instrs.push_back(new x0::ISrcDst(MOVQ, rstack.at(i), new x0::Mem("r12", 8*i)));
     }
-    ICall call_collect("_lang_collect", { new Reg("r12"), new Con(live_references.size())}, new Reg("r15"));
+    ICall call_collect(new Global("_lang_collect"),
+                       { new Reg("r12"), new Con(live_references.size())},
+                       new Reg("r15"));
     instrs.splice(instrs.end(), call_collect.assign(vmap));
     for (unsigned int i = 0; i < live_references.size(); i++)
     {
@@ -519,8 +524,8 @@ list <x0::I*> ICollect::assign(const s2vmap &vmap)
     }
 
 #ifdef DEBUG_BUILD
-    ICall call_dbg_1("_lang_print_num", { new Reg("rax") }, nullptr);
-    ICall call_dbg_2("_lang_print_num", { new Reg("r15") }, nullptr);
+    ICall call_dbg_1(new Global("_lang_print_num"), { new Reg("rax") }, nullptr);
+    ICall call_dbg_2(new Global("_lang_print_num"), { new Reg("r15") }, nullptr);
     auto dbg1 = call_dbg_1.assign(vmap);
     dbg1.splice(dbg1.end(), call_dbg_2.assign(vmap));
     dbg1.splice(dbg1.end(), instrs);
@@ -547,7 +552,7 @@ list<x0::I*> ICall::assign(const s2vmap &vmap)
     {
         a.push_back(new x0::ISrc(PUSHQ, args.at(args.size()-i-1)->assign(vmap)));
     }
-    a.push_back(new x0::ICall(this->label));
+    a.push_back(new x0::ICall(f->assign(vmap)));
     if (args.size() > callers.size())
     {
         a.push_back(new x0::ISrcDst(ADDQ, new x0::Con(8*(args.size()-callers.size())), new x0::Reg("rsp")));
@@ -651,14 +656,16 @@ list<string> IIf::get_vars()
 
 list<string> ICall::get_vars()
 {
+    list<string> vars;
+    if (typeid(f) == typeid(Var*))
+    {
+        vars.push_back(static_cast<Var*>(f)->var);
+    }
     if (typeid(dst) == typeid(Var*))
     {
-        return { static_cast<Var*>(dst)->var };
+        vars.push_back(static_cast<Var*>(dst)->var);
     }
-    else
-    {
-        return { };
-    }
+    return vars;
 }
 
 list<string> IJmp::get_vars()

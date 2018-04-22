@@ -24,6 +24,7 @@ namespace r0
         virtual E* clone() const = 0;
         virtual void deep_delete() = 0;
         virtual E* desugar() = 0;
+        virtual inline void fix_trustme(int t, std::unordered_map<std::string, int>&);
         int t;
     };
 
@@ -118,6 +119,7 @@ namespace r0
         Var* clone() const;
         void deep_delete() { }
         E* desugar() { return this; }
+        inline void fix_trustme(int t, std::unordered_map<std::string, int>&);
     };
 
     struct GlobalVar : E
@@ -137,9 +139,15 @@ namespace r0
 
     struct Call : E
     {
-        Call(std::string name, std::list<E*> ee) : name(name), args(ee), t_tentative(TUNKNOWN) { }
-        Call(std::string name, std::list<E*> ee, type t) : name(name), args(ee), t_tentative(t) { }
-        std::string name;
+        Call(std::string fname, std::list<E*> ee) :
+            func(new GlobalVar(fname)), args(ee), t_tentative(TUNKNOWN) { }
+        Call(std::string fname, std::list<E*> ee, type t) :
+            func(new GlobalVar(fname)), args(ee), t_tentative(t) { }
+        Call(E* func, std::list<E*> ee) :
+            func(func), args(ee), t_tentative(TUNKNOWN) { }
+        Call(E* func, std::list<E*> ee, type t) :
+            func(func), args(ee), t_tentative(t) { }
+        E* func;
         std::list<E*> args;
         std::list<E*> get_childs() { return args; }
         // an extra t is necessary because we use existing t to check for first
@@ -290,7 +298,7 @@ namespace r0
         F clone() const;
         void deep_delete() { this->e->deep_delete(); delete this->e; }
         bool is_unique() const;
-        void uniquify();
+        void uniquify(std::unordered_map<std::string, std::string>);
         void type_check(std::unordered_map<std::string, int> vars);
         void generate_fun_type(std::unordered_map<std::string, int> &vars);
         void flatten(std::vector<c0::F> &c0fs) const;

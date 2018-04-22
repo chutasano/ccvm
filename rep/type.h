@@ -10,6 +10,7 @@ enum type
     TVOID,
     TERROR,
     TUNKNOWN,
+    TTRUSTME,
     TVEC, // TVEC+n will internally be used to separate different vector types
     TFUN = 0x3FFFFFFF // TFUN+n to separate different func types
 };
@@ -30,7 +31,7 @@ enum tvoid
     TV_VOID = 0
 };
 
-static inline std::string type2name(int n)
+inline std::string type2name(int n)
 {
     switch(n)
     {
@@ -45,7 +46,7 @@ static inline std::string type2name(int n)
         case TFUN:
             return "_LANG_FUN_T";
         default:
-            if (n == TERROR || n == TUNKNOWN)
+            if (n == TERROR || n == TUNKNOWN || n == TTRUSTME)
             {
                 return "WTF_WRONG_TYPE";
             }
@@ -59,3 +60,4 @@ static inline std::string type2name(int n)
             }
     }
 }
+
