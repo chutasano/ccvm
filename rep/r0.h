@@ -16,6 +16,7 @@ namespace r0
         E() : t(TUNKNOWN) { }
         virtual ~E() { }
         virtual std::list<E*> get_childs() = 0;
+        virtual std::list<std::string> get_vars() = 0;
         virtual void uniquify(std::unordered_map<std::string, std::string>) = 0;
         virtual int t_check(std::unordered_map<std::string, int>&) = 0;
         virtual c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -33,6 +34,7 @@ namespace r0
         Num(int64_t v) { value = v; }
         int64_t value;
         std::list<E*> get_childs() { return {}; }
+        std::list<std::string> get_vars() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -48,6 +50,7 @@ namespace r0
         Bool(tbool v) { value = v; }
         tbool value;
         std::list<E*> get_childs() { return {}; }
+        std::list<std::string> get_vars() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -62,6 +65,7 @@ namespace r0
     {
         Read() { }
         std::list<E*> get_childs() { return {}; }
+        std::list<std::string> get_vars() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -79,6 +83,7 @@ namespace r0
         E* l;
         E* r;
         std::list<E*> get_childs() { return {l, r}; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -95,6 +100,7 @@ namespace r0
         u_ops op;
         E* v;
         std::list<E*> get_childs() { return {v}; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -111,6 +117,7 @@ namespace r0
         Var(std::string varname, int t) : name(varname) { this->t = t; } 
         std::string name;
         std::list<E*> get_childs() { return {}; }
+        std::list<std::string> get_vars() { return {name}; }
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -127,6 +134,7 @@ namespace r0
         GlobalVar(std::string varname) { name = varname; }
         std::string name;
         std::list<E*> get_childs() { return {}; }
+        std::list<std::string> get_vars() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -150,6 +158,7 @@ namespace r0
         E* func;
         std::list<E*> args;
         std::list<E*> get_childs() { return args; }
+        std::list<std::string> get_vars();
         // an extra t is necessary because we use existing t to check for first
         // initialization on type_check, so t has to remain TUNKNOWN until
         // type_check runs at least once
@@ -171,6 +180,7 @@ namespace r0
         E* ve;
         E* be;
         std::list<E*> get_childs() { return {ve, be}; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -188,6 +198,7 @@ namespace r0
         E* thene;
         E* elsee;
         std::list<E*> get_childs() { return { conde, thene, elsee}; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -204,6 +215,7 @@ namespace r0
         Vector(std::list<E*> ee) : elist(ee) { }
         std::list<E*> elist;
         std::list<E*> get_childs() { return elist; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -222,6 +234,7 @@ namespace r0
         E* vec;
         int index;
         std::list<E*> get_childs() { return { vec }; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string> m) { vec->uniquify(m); }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -239,6 +252,7 @@ namespace r0
         int index;
         E* asg;
         std::list<E*> get_childs() { return { vec, asg }; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string> m) { vec->uniquify(m); asg->uniquify(m); }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -255,6 +269,7 @@ namespace r0
         std::vector<std::string> args;
         E* body;
         std::list<E*> get_childs() { return { body }; }
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string> m);
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
@@ -270,6 +285,7 @@ namespace r0
     struct Sugar : E
     {
         std::list<E*> get_childs();
+        std::list<std::string> get_vars();
         void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,

@@ -388,6 +388,16 @@ int Read::t_check(unordered_map<string, int> &vmap)
     return TNUM;
 }
 
+std::list<string> Binop::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> lvs = l->get_vars();
+    std::list<string> rvs = r->get_vars();
+    vs.insert(end(vs), begin(lvs), end(lvs));
+    vs.insert(end(vs), begin(rvs), end(rvs));
+    return vs;
+}
+
 Binop* Binop::clone() const
 {
     return new Binop(this->op, this->l->clone(), this->r->clone());
@@ -462,6 +472,14 @@ int Binop::t_check(unordered_map<string, int> &vmap)
         }
     }
     return t;
+}
+
+std::list<string> Unop::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> vvs = v->get_vars();
+    vs.insert(end(vs), begin(vvs), end(vvs));
+    return vs;
 }
 
 Unop* Unop::clone() const
@@ -602,6 +620,19 @@ int GlobalVar::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
+std::list<string> Call::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> fvs = func->get_vars();
+    vs.insert(end(vs), begin(fvs), end(fvs));
+    for (E* e : args)
+    {
+        std::list<string> argvs = e->get_vars();
+        vs.insert(end(vs), begin(argvs), end(argvs));
+    }
+    return vs;
+}
+
 Call* Call::clone() const
 {
     list<E*> ecopy;
@@ -686,6 +717,17 @@ E* Call::desugar()
     }
     return this;
 }
+
+std::list<string> Let::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> vvs = ve->get_vars();
+    std::list<string> bvs = be->get_vars();
+    vs.insert(end(vs), begin(vvs), end(vvs));
+    vs.insert(end(vs), begin(bvs), end(bvs));
+    return vs;
+}
+
 Let* Let::clone() const
 {
     return new Let(this->name, this->ve->clone(), this->be->clone());
@@ -720,6 +762,18 @@ int Let::t_check(unordered_map<string, int> &vmap)
         t = this->be->t_check(vmap);
     }
     return t;
+}
+
+std::list<string> If::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> cvs = conde->get_vars();
+    std::list<string> tvs = thene->get_vars();
+    std::list<string> evs = elsee->get_vars();
+    vs.insert(end(vs), begin(cvs), end(cvs));
+    vs.insert(end(vs), begin(tvs), end(tvs));
+    vs.insert(end(vs), begin(evs), end(evs));
+    return vs;
 }
 
 If* If::clone() const
@@ -782,6 +836,17 @@ int If::t_check(unordered_map<string, int> &vmap)
         }
     }
     return t;
+}
+
+std::list<string> Vector::get_vars()
+{
+    std::list<string> vs;
+    for (E* e : elist)
+    {
+        std::list<string> argvs = e->get_vars();
+        vs.insert(end(vs), begin(argvs), end(argvs));
+    }
+    return vs;
 }
 
 Vector* Vector::clone() const
@@ -869,6 +934,14 @@ E* Vector::desugar()
     return this;
 }
 
+std::list<string> VectorRef::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> vvs = vec->get_vars();
+    vs.insert(end(vs), begin(vvs), end(vvs));
+    return vs;
+}
+
 int VectorRef::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
@@ -887,6 +960,16 @@ c0::Arg* VectorRef::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
     stmts.push_back(new c0::S(s, new c0::VecRef(static_cast<c0::Var*>(vec->to_c0(vars, stmts, c0fs)),
                                                 index)));
     return new c0::Var(s);
+}
+
+std::list<string> VectorSet::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> vvs = vec->get_vars();
+    std::list<string> avs = asg->get_vars();
+    vs.insert(end(vs), begin(vvs), end(vvs));
+    vs.insert(end(vs), begin(avs), end(avs));
+    return vs;
 }
 
 int VectorSet::t_check(unordered_map<string, int> &vmap)
@@ -915,6 +998,14 @@ c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
                 new c0::VecSet(static_cast<c0::Var*>(vec->to_c0(vars, stmts, c0fs)),
                                index, asg->to_c0(vars, stmts, c0fs))));
     return new c0::Var(s);
+}
+
+std::list<string> Lambda::get_vars()
+{
+    std::list<string> vs;
+    std::list<string> bvs = body->get_vars();
+    vs.insert(end(vs), begin(bvs), end(bvs));
+    return vs;
 }
 
 void Lambda::uniquify(unordered_map<string, string> m)
@@ -968,6 +1059,12 @@ c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts,
 }
 
 list<E*> Sugar::get_childs()
+{
+    cerr << "Call desugar before using any r0->c0 functionality\n";
+    exit(10);
+}
+
+list<string> Sugar::get_vars()
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);

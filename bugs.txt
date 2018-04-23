@@ -5,5 +5,5 @@ lib.c AFAIK. Hopefully no weirdness)
 
 Rootstack is not properly accounted for across function calls. Need to fix
 
-Global function names need to be uniquified(?)
+Properly use movq vs leaq for refs vs values.
 
