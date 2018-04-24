@@ -20,7 +20,7 @@ namespace r0
         virtual std::list<std::string> get_vars();
         virtual void uniquify(std::unordered_map<std::string, std::string>);
         virtual int t_check(std::unordered_map<std::string, int>&) = 0;
-        virtual E* lambda_lift() { return this; } //TODO
+        virtual E* lambda_lift(const std::unordered_map<std::string, int>&);
         virtual c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                                std::vector<c0::AS*> &stmts,
                                std::vector<c0::F> &c0fs) const = 0;
@@ -230,7 +230,7 @@ namespace r0
         std::list<std::reference_wrapper<E*> > get_childs() { return { body }; }
         void uniquify(std::unordered_map<std::string, std::string> m) override;
         int t_check(std::unordered_map<std::string, int>&);
-        E* lambda_lift() override;
+        E* lambda_lift(const std::unordered_map<std::string, int>&) override;
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -242,7 +242,8 @@ namespace r0
     struct Sugar : E
     {
         void uniquify(std::unordered_map<std::string, std::string>) override;
-        int t_check(std::unordered_map<std::string, int>&);
+        int t_check(std::unordered_map<std::string, int>&) override;
+        E* lambda_lift(const std::unordered_map<std::string, int>&) override;
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;

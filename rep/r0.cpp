@@ -111,6 +111,15 @@ void E::uniquify(unordered_map<string, string> m)
     }
 }
 
+E* E::lambda_lift(const unordered_map<string, int> &vars)
+{
+    for (E* &e : this->get_childs())
+    {
+        e = e->lambda_lift(vars);
+    }
+    return this;
+}
+
 list<string> E::get_vars()
 {
     list<string> vars;
@@ -907,7 +916,7 @@ int Lambda::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
-E* Lambda::lambda_lift()
+E* Lambda::lambda_lift(const unordered_map<string, int> &vars)
 {
     /*
     // TODO maybe use set in get_vars?
@@ -991,6 +1000,14 @@ int Sugar::t_check(unordered_map<string, int> &a)
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);
 }
+
+E* Sugar::lambda_lift(const unordered_map<string, int> &a)
+{
+    cerr << "Call desugar before using any r0->c0 functionality\n";
+    exit(10);
+}
+
+
 
 c0::Arg* Sugar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
