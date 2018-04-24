@@ -19,6 +19,7 @@ namespace r0
         virtual std::list<std::string> get_vars();
         virtual void uniquify(std::unordered_map<std::string, std::string>);
         virtual int t_check(std::unordered_map<std::string, int>&) = 0;
+        virtual E* lambda_lift() { return this; } //TODO
         virtual c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                                std::vector<c0::AS*> &stmts,
                                std::vector<c0::F> &c0fs) const = 0;
@@ -240,6 +241,7 @@ namespace r0
         std::list<E*> get_childs() { return { body }; }
         void uniquify(std::unordered_map<std::string, std::string> m) override;
         int t_check(std::unordered_map<std::string, int>&);
+        E* lambda_lift() override;
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;

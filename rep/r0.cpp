@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <cassert>
 #include <iostream>
 #include <queue>
 #include <typeinfo>
@@ -5,7 +7,6 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
-#include <cassert>
 
 #include "c0.h"
 #include "r0.h"
@@ -31,7 +32,7 @@ using namespace r0;
 map<int, vector<int> > vec_type;
 map<int, vector<int> > fun_type;
 
-static string gensym(string sym, bool reset = false)
+static string gensym(const string &sym, bool reset = false)
 {
     static unordered_map<string, unsigned int> count;
     if (reset && sym == "")
@@ -51,7 +52,33 @@ static string gensym(string sym, bool reset = false)
     }
     return sym + "_" + to_string(id);
 }
-static int add_ftype(vector<int> ftype)
+
+static int add_vtype(const vector<int> &types)
+{
+    auto it = vec_type.begin();
+    int t = TUNKNOWN;
+    for (; it != vec_type.end(); ++it)
+    {
+        // no need to worry about checking for nested vectors because
+        // the above for loop should take care of that and prevent
+        // duplicate definition from occuring
+        if (it->second == types)
+        {
+            t = it->first;
+            break;
+        }
+    }
+    if (it == vec_type.end())
+    {
+        // make new entry in vec_type
+        int next_index = (--it)->first + 1;
+        vec_type[next_index] = types;
+        t = next_index;
+    }
+    return t;
+}
+
+static int add_ftype(const vector<int> &ftype)
 {
     // expensive... oh well maybe optimize todo?
     auto it = fun_type.begin();
@@ -109,6 +136,7 @@ inline void E::fix_trustme(int t, unordered_map<string, int> &vmap)
     assert(this->t == TTRUSTME);
     this->t = t;
 }
+
 
 P::P(std::vector<F> fs, string to_run, int heap_s = 2048) : funcs(fs), to_run(to_run)
 {
@@ -794,26 +822,7 @@ int Vector::t_check(unordered_map<string, int> &vmap)
         {
             types.push_back(e->t_check(vmap));
         }
-        // expensive... oh well maybe optimize todo?
-        auto it = vec_type.begin();
-        for (; it != vec_type.end(); ++it)
-        {
-            // no need to worry about checking for nested vectors because
-            // the above for loop should take care of that and prevent
-            // duplicate definition from occuring
-            if (it->second == types)
-            {
-                t = it->first;
-                break;
-            }
-        }
-        if (it == vec_type.end())
-        {
-            // make new entry in vec_type
-            int next_index = (--it)->first + 1;
-            vec_type[next_index] = types;
-            t = next_index;
-        }
+        t = add_vtype(types);
     }
     return t;
 }
@@ -907,12 +916,67 @@ int Lambda::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
+E* Lambda::lambda_lift()
+{
+    /*
+    // TODO maybe use set in get_vars?
+    list<string> all_vars = body->get_vars();
+    sort(all_vars.begin(), all_vars.end());
+    all_vars.erase(unique(all_vars.begin(), all_vars.end()), all_vars.end());
+    all_vars.erase(remove_if(all_vars.begin(), all_vars.end(),
+                             [this](string s) {
+                             return find(args.begin(), args.end(), s)
+                             != args.end(); }),
+                   all_vars.end());
+    bool enable_closure = all_vars.size() > 0;
+    //all_vars contain all variables that need to be captured in f
+    if (enable_closure)
+    {
+        vector<int> ft = fun_type.at(t);
+        // placeholder for vec arg
+        ft.insert(ft.begin(), TTRUSTME);
+        int new_t = add_ftype(ft); // reserve a spot in ftype
+        // to_c0 is post type check so TTRUSTME must be unique
+ 
+        // vector should consist of (Func, capture1, capture2, ...)
+        vector<int> vt = {new_t};
+        for (const string &s : all_vars)
+        {
+            vt.push_back(vars.at(s));
+        }
+        int new_vec_t = add_vtype(vt);
+        fun_at.at(new_t).front() = new_vec_t;
+        // TODO NOT CONST
+        // fix up to_c0
+        string vector_name = gensym(s+"closure_vec");
+        Var* v_local_vector = new Vector(vector_name, new_vec_t);
+        fargs.insert(fargs.begin(), *v_local_vector);
+        fargs.emplace(fargs.begin(), vector_name, new_vec_t);
+        E* prev_ref = body;
+        int i=0;
+        // note: the vector_refs will be in reverse order, but
+        // it shouldn't matter?? maybe revisit this
+        for (const string &s : all_vars)
+        {
+            prev_ref = new Let(s, new VectorRef(v_local_vector, i), prev_ref);
+            i++;
+        }
+        body = prev_ref;
+        int new_type = add_ftype(ft);
+    }
+    */
+    return this;
+}
+
 c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
+
     string s = gensym("r0Lambda");
+
     vars[s] = t;
     std::vector<Var> fargs;
     const vector<int> &ft = fun_type.at(t);
+
     int i=0;
     for (const string &s : args)
     {

@@ -538,6 +538,22 @@ void test_all(bool run_only_last = false)
         t(main_test, 123+321+111);
     }
 
+    ts("Lambda (closure)");
+    {
+        NUM(123); NUM(321); NUM(111);
+        VAR(x1); VAR(x2); VAR(x3); VAR(capture);
+        PLUS(vx2, vx3);
+        PLUS(vx1, vcapture);
+        PLUSN(sum3, bplus_vx1_vcapture, bplus_vx2_vx3);
+        LAMBDA(add3num, {"x1","x2","x3"}, sum3);
+        VAR(r0add3num);
+        UPTR(r0::Call, calladd3, vr0add3num, {n123, n321, n111});
+        LET(main_test_p, r0add3num, add3num, calladd3);
+        LET(main_test, capture, n10, main_test_p);
+        t(main_test, 123+321+111+10);
+
+    }
+
     cout << "Total tests failed: " << fails << endl;
 }
 
