@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <string>
 #include <vector>
 #include <unordered_map>
@@ -15,7 +16,7 @@ namespace r0
     {
         E() : t(TUNKNOWN) { }
         virtual ~E() { }
-        virtual std::list<E*> get_childs() = 0;
+        virtual std::list<std::reference_wrapper<E*> > get_childs() = 0;
         virtual std::list<std::string> get_vars();
         virtual void uniquify(std::unordered_map<std::string, std::string>);
         virtual int t_check(std::unordered_map<std::string, int>&) = 0;
@@ -25,7 +26,7 @@ namespace r0
                                std::vector<c0::F> &c0fs) const = 0;
         virtual E* clone() const = 0;
         void deep_delete();
-        virtual E* desugar() = 0;
+        virtual E* desugar();
         virtual inline void fix_trustme(int t, std::unordered_map<std::string, int>&);
         int t;
     };
@@ -34,38 +35,35 @@ namespace r0
     {
         Num(int64_t v) { value = v; }
         int64_t value;
-        std::list<E*> get_childs() { return {}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Num* clone() const;
-        E* desugar() { return this; }
     };
 
     struct Bool : E
     {
         Bool(tbool v) { value = v; }
         tbool value;
-        std::list<E*> get_childs() { return {}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Bool* clone() const;
-        E* desugar() { return this; }
     };
 
     struct Read : E
     {
         Read() { }
-        std::list<E*> get_childs() { return {}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Read* clone() const;
-        E* desugar() { return this; }
     };
 
     struct Binop : E
@@ -74,13 +72,12 @@ namespace r0
         b_ops op;
         E* l;
         E* r;
-        std::list<E*> get_childs() { return {l, r}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {l, r}; }
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Binop* clone() const;
-        E* desugar() { l = l->desugar(); r = r->desugar(); return this; }
     };
 
     struct Unop : E
@@ -88,13 +85,12 @@ namespace r0
         Unop(u_ops oper, E* value) : op(oper), v(value) { }
         u_ops op;
         E* v;
-        std::list<E*> get_childs() { return {v}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {v}; }
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Unop* clone() const;
-        E* desugar() { v = v->desugar(); return this; }
     };
 
     struct Var : E
@@ -102,7 +98,7 @@ namespace r0
         Var(std::string varname) : name(varname) { }
         Var(std::string varname, int t) : name(varname) { this->t = t; } 
         std::string name;
-        std::list<E*> get_childs() { return {}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
         std::list<std::string> get_vars() override { return {name}; }
         void uniquify(std::unordered_map<std::string, std::string>) override;
         int t_check(std::unordered_map<std::string , int>&);
@@ -110,7 +106,6 @@ namespace r0
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Var* clone() const;
-        E* desugar() { return this; }
         inline void fix_trustme(int t, std::unordered_map<std::string, int>&);
     };
 
@@ -118,14 +113,13 @@ namespace r0
     {
         GlobalVar(std::string varname) { name = varname; }
         std::string name;
-        std::list<E*> get_childs() { return {}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>) override;
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         GlobalVar* clone() const;
-        E* desugar() { return this; }
     };
 
     struct Call : E
@@ -135,14 +129,14 @@ namespace r0
         Call(std::string fname, std::list<E*> ee, type t) :
             func(new GlobalVar(fname)), args(ee), t_tentative(t) { }
         Call(E* func, std::list<E*> ee) :
-            func(func), args(ee), t_tentative(TUNKNOWN) { }
+            func(func), args(ee), t_tentative(TUNKNOWN) { };
         Call(E* func, std::list<E*> ee, type t) :
             func(func), args(ee), t_tentative(t) { }
         E* func;
         std::list<E*> args;
-        std::list<E*> get_childs()
+        std::list<std::reference_wrapper<E*> > get_childs()
         {
-            std::list<E*> args_cpy = args;
+            std::list<std::reference_wrapper<E*> > args_cpy(args.begin(), args.end());
             args_cpy.push_back(func);
             return args_cpy;
         }
@@ -155,7 +149,6 @@ namespace r0
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Call* clone() const;
-        E* desugar();
     };
 
     struct Let : E
@@ -164,14 +157,13 @@ namespace r0
         std::string name;
         E* ve;
         E* be;
-        std::list<E*> get_childs() { return {ve, be}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return {ve, be}; }
         void uniquify(std::unordered_map<std::string, std::string>) override;
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Let* clone() const;
-        E* desugar() { ve = ve->desugar(); be = be->desugar(); return this; }
     };
 
     struct If : E
@@ -180,26 +172,25 @@ namespace r0
         E* conde;
         E* thene;
         E* elsee;
-        std::list<E*> get_childs() { return { conde, thene, elsee}; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return { conde, thene, elsee}; }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         If* clone() const;
-        E* desugar() { conde = conde->desugar(); thene = thene->desugar(); elsee = elsee->desugar(); return this;}
     };
 
     struct Vector : E
     {
         Vector(std::list<E*> ee) : elist(ee) { }
         std::list<E*> elist;
-        std::list<E*> get_childs() { return elist; }
+        std::list<std::reference_wrapper<E*> > get_childs()
+        { return std::list<std::reference_wrapper<E*> >(elist.begin(), elist.end()); }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Vector* clone() const;
-        E* desugar();
     };
 
     struct VectorRef : E
@@ -209,13 +200,12 @@ namespace r0
         // (it can even be a let or if that returns a vec)
         E* vec;
         int index;
-        std::list<E*> get_childs() { return { vec }; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return { vec }; }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         VectorRef* clone() const { return new VectorRef(vec->clone(), index); }
-        E* desugar() { vec = vec->desugar(); return this; }
     };
 
     struct VectorSet : E
@@ -224,13 +214,12 @@ namespace r0
         E* vec;
         int index;
         E* asg;
-        std::list<E*> get_childs() { return { vec, asg }; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return { vec, asg }; }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         VectorSet* clone() const { return new VectorSet(vec->clone(), index, asg->clone()); }
-        E* desugar() { vec = vec->desugar(); asg = asg->desugar(); return this; };
     };
 
     struct Lambda : E
@@ -238,7 +227,7 @@ namespace r0
         Lambda(std::vector<std::string> args, E* body) : args(args), body(body) { }
         std::vector<std::string> args;
         E* body;
-        std::list<E*> get_childs() { return { body }; }
+        std::list<std::reference_wrapper<E*> > get_childs() { return { body }; }
         void uniquify(std::unordered_map<std::string, std::string> m) override;
         int t_check(std::unordered_map<std::string, int>&);
         E* lambda_lift() override;
@@ -246,7 +235,6 @@ namespace r0
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Lambda* clone() const { return new Lambda(args, body->clone()); }
-        E* desugar() { body = body->desugar(); return this; };
     };
 
 
@@ -264,7 +252,7 @@ namespace r0
     {
         Begin(std::list<E*> exps) : elist(exps) { }
         std::list<E*> elist;
-        std::list<E*> get_childs();
+        std::list<std::reference_wrapper<E*> > get_childs();
         Begin* clone() const;
         E* desugar();
     };

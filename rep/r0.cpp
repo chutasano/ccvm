@@ -131,6 +131,15 @@ void E::deep_delete()
     }
 }
 
+E* E::desugar()
+{
+    for (E* &e : this->get_childs())
+    {
+        e = e->desugar();
+    }
+    return this;
+}
+
 inline void E::fix_trustme(int t, unordered_map<string, int> &vmap)
 {
     assert(this->t == TTRUSTME);
@@ -687,15 +696,6 @@ int Call::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
-E* Call::desugar()
-{
-    for (E* e : args)
-    {
-        e = e->desugar();
-    }
-    return this;
-}
-
 Let* Let::clone() const
 {
     return new Let(this->name, this->ve->clone(), this->be->clone());
@@ -825,15 +825,6 @@ int Vector::t_check(unordered_map<string, int> &vmap)
         t = add_vtype(types);
     }
     return t;
-}
-
-E* Vector::desugar()
-{
-    for (E* e : elist)
-    {
-        e = e->desugar();
-    }
-    return this;
 }
 
 int VectorRef::t_check(unordered_map<string, int> &vmap)
@@ -1007,9 +998,9 @@ c0::Arg* Sugar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, 
     exit(10);
 }
 
-list<E*> Begin::get_childs()
+list<reference_wrapper<E*> > Begin::get_childs()
 {
-    return elist;
+    return list<reference_wrapper<E*> >(elist.begin(), elist.end());
 }
 
 Begin* Begin::clone() const
