@@ -51,7 +51,6 @@ static string gensym(string sym, bool reset = false)
     }
     return sym + "_" + to_string(id);
 }
-
 static int add_ftype(vector<int> ftype)
 {
     // expensive... oh well maybe optimize todo?
@@ -75,6 +74,34 @@ static int add_ftype(vector<int> ftype)
         t = next_index;
     }
     return t;
+}
+
+void E::uniquify(unordered_map<string, string> m)
+{
+    for (E* e : this->get_childs())
+    {
+        e->uniquify(m);
+    }
+}
+
+list<string> E::get_vars()
+{
+    list<string> vars;
+    for (E* e : this->get_childs())
+    {
+        list<string> evars = e->get_vars();
+        vars.splice(vars.end(), evars);
+    }
+    return vars;
+}
+
+void E::deep_delete()
+{
+    for (E* e : this->get_childs())
+    {
+        e->deep_delete();
+        delete e;
+    }
 }
 
 inline void E::fix_trustme(int t, unordered_map<string, int> &vmap)
@@ -327,11 +354,6 @@ Num* Num::clone() const
     return new Num(this->value);
 }
 
-void Num::uniquify(unordered_map<string, string> m)
-{
-    return;
-}
-
 c0::Arg* Num::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
      return new c0::Num(this->value);
@@ -346,11 +368,6 @@ int Num::t_check(unordered_map<string, int> &vmap)
 Bool* Bool::clone() const
 {
     return new Bool(this->value);
-}
-
-void Bool::uniquify(unordered_map<string, string> m)
-{
-    return;
 }
 
 c0::Arg* Bool::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
@@ -369,11 +386,6 @@ Read* Read::clone() const
     return new Read();
 }
 
-void Read::uniquify(unordered_map<string, string> m)
-{
-    return;
-}
-
 c0::Arg* Read::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
 {
     string s = gensym("r0Read");
@@ -388,25 +400,9 @@ int Read::t_check(unordered_map<string, int> &vmap)
     return TNUM;
 }
 
-std::list<string> Binop::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> lvs = l->get_vars();
-    std::list<string> rvs = r->get_vars();
-    vs.insert(end(vs), begin(lvs), end(lvs));
-    vs.insert(end(vs), begin(rvs), end(rvs));
-    return vs;
-}
-
 Binop* Binop::clone() const
 {
     return new Binop(this->op, this->l->clone(), this->r->clone());
-}
-
-void Binop::uniquify(unordered_map<string, string> m)
-{
-    this->l->uniquify(m);
-    this->r->uniquify(m);
 }
 
 c0::Arg* Binop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
@@ -474,22 +470,9 @@ int Binop::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
-std::list<string> Unop::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> vvs = v->get_vars();
-    vs.insert(end(vs), begin(vvs), end(vvs));
-    return vs;
-}
-
 Unop* Unop::clone() const
 {
     return new Unop(this->op, this->v->clone());
-}
-
-void Unop::uniquify(unordered_map<string, string> m)
-{
-    this->v->uniquify(m);
 }
 
 c0::Arg* Unop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
@@ -620,19 +603,6 @@ int GlobalVar::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
-std::list<string> Call::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> fvs = func->get_vars();
-    vs.insert(end(vs), begin(fvs), end(fvs));
-    for (E* e : args)
-    {
-        std::list<string> argvs = e->get_vars();
-        vs.insert(end(vs), begin(argvs), end(argvs));
-    }
-    return vs;
-}
-
 Call* Call::clone() const
 {
     list<E*> ecopy;
@@ -641,26 +611,6 @@ Call* Call::clone() const
         ecopy.push_back(e->clone());
     }
     return new Call(func->clone(), ecopy, static_cast<type>(t));
-}
-
-void Call::deep_delete()
-{
-    func->deep_delete();
-    delete func;
-    for (E* e : args)
-    {
-        e->deep_delete();
-        delete e;
-    }
-}
-
-void Call::uniquify(unordered_map<string, string> m)
-{
-    func->uniquify(m);
-    for (E* e : args)
-    {
-        e->uniquify(m);
-    }
 }
 
 c0::Arg* Call::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
@@ -718,16 +668,6 @@ E* Call::desugar()
     return this;
 }
 
-std::list<string> Let::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> vvs = ve->get_vars();
-    std::list<string> bvs = be->get_vars();
-    vs.insert(end(vs), begin(vvs), end(vvs));
-    vs.insert(end(vs), begin(bvs), end(bvs));
-    return vs;
-}
-
 Let* Let::clone() const
 {
     return new Let(this->name, this->ve->clone(), this->be->clone());
@@ -764,28 +704,9 @@ int Let::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
-std::list<string> If::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> cvs = conde->get_vars();
-    std::list<string> tvs = thene->get_vars();
-    std::list<string> evs = elsee->get_vars();
-    vs.insert(end(vs), begin(cvs), end(cvs));
-    vs.insert(end(vs), begin(tvs), end(tvs));
-    vs.insert(end(vs), begin(evs), end(evs));
-    return vs;
-}
-
 If* If::clone() const
 {
     return new If(conde->clone(), thene->clone(), elsee->clone());
-}
-
-void If::uniquify(unordered_map<string, string> m)
-{
-    conde->uniquify(m);
-    thene->uniquify(m);
-    elsee->uniquify(m);
 }
 
 c0::Arg* If::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
@@ -838,17 +759,6 @@ int If::t_check(unordered_map<string, int> &vmap)
     return t;
 }
 
-std::list<string> Vector::get_vars()
-{
-    std::list<string> vs;
-    for (E* e : elist)
-    {
-        std::list<string> argvs = e->get_vars();
-        vs.insert(end(vs), begin(argvs), end(argvs));
-    }
-    return vs;
-}
-
 Vector* Vector::clone() const
 {
     list<E*> ecopy;
@@ -857,23 +767,6 @@ Vector* Vector::clone() const
         ecopy.push_back(e->clone());
     }
     return new Vector(ecopy);
-}
-
-void Vector::deep_delete()
-{
-    for (E* e : elist)
-    {
-        e->deep_delete();
-        delete e;
-    }
-}
-
-void Vector::uniquify(unordered_map<string, string> m)
-{
-    for (E* e : elist)
-    {
-        e->uniquify(m);
-    }
 }
 
 c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vector<c0::F> &c0fs) const
@@ -934,14 +827,6 @@ E* Vector::desugar()
     return this;
 }
 
-std::list<string> VectorRef::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> vvs = vec->get_vars();
-    vs.insert(end(vs), begin(vvs), end(vvs));
-    return vs;
-}
-
 int VectorRef::t_check(unordered_map<string, int> &vmap)
 {
     if (t == TUNKNOWN)
@@ -960,16 +845,6 @@ c0::Arg* VectorRef::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
     stmts.push_back(new c0::S(s, new c0::VecRef(static_cast<c0::Var*>(vec->to_c0(vars, stmts, c0fs)),
                                                 index)));
     return new c0::Var(s);
-}
-
-std::list<string> VectorSet::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> vvs = vec->get_vars();
-    std::list<string> avs = asg->get_vars();
-    vs.insert(end(vs), begin(vvs), end(vvs));
-    vs.insert(end(vs), begin(avs), end(avs));
-    return vs;
 }
 
 int VectorSet::t_check(unordered_map<string, int> &vmap)
@@ -998,14 +873,6 @@ c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
                 new c0::VecSet(static_cast<c0::Var*>(vec->to_c0(vars, stmts, c0fs)),
                                index, asg->to_c0(vars, stmts, c0fs))));
     return new c0::Var(s);
-}
-
-std::list<string> Lambda::get_vars()
-{
-    std::list<string> vs;
-    std::list<string> bvs = body->get_vars();
-    vs.insert(end(vs), begin(bvs), end(bvs));
-    return vs;
 }
 
 void Lambda::uniquify(unordered_map<string, string> m)
@@ -1058,18 +925,6 @@ c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts,
     return new c0::GlobalVar(s);
 }
 
-list<E*> Sugar::get_childs()
-{
-    cerr << "Call desugar before using any r0->c0 functionality\n";
-    exit(10);
-}
-
-list<string> Sugar::get_vars()
-{
-    cerr << "Call desugar before using any r0->c0 functionality\n";
-    exit(10);
-}
-
 void Sugar::uniquify(unordered_map<string, string> a)
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
@@ -1088,6 +943,11 @@ c0::Arg* Sugar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, 
     exit(10);
 }
 
+list<E*> Begin::get_childs()
+{
+    return elist;
+}
+
 Begin* Begin::clone() const
 {
     list<E*> newlist;
@@ -1096,15 +956,6 @@ Begin* Begin::clone() const
         newlist.push_back(e->clone());
     }
     return new Begin(newlist);
-}
-
-void Begin::deep_delete()
-{
-    for (E* e : elist)
-    {
-        e->deep_delete();
-        delete e;
-    }
 }
 
 E* Begin::desugar()

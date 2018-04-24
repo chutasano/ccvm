@@ -16,14 +16,14 @@ namespace r0
         E() : t(TUNKNOWN) { }
         virtual ~E() { }
         virtual std::list<E*> get_childs() = 0;
-        virtual std::list<std::string> get_vars() = 0;
-        virtual void uniquify(std::unordered_map<std::string, std::string>) = 0;
+        virtual std::list<std::string> get_vars();
+        virtual void uniquify(std::unordered_map<std::string, std::string>);
         virtual int t_check(std::unordered_map<std::string, int>&) = 0;
         virtual c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                                std::vector<c0::AS*> &stmts,
                                std::vector<c0::F> &c0fs) const = 0;
         virtual E* clone() const = 0;
-        virtual void deep_delete() = 0;
+        void deep_delete();
         virtual E* desugar() = 0;
         virtual inline void fix_trustme(int t, std::unordered_map<std::string, int>&);
         int t;
@@ -34,14 +34,11 @@ namespace r0
         Num(int64_t v) { value = v; }
         int64_t value;
         std::list<E*> get_childs() { return {}; }
-        std::list<std::string> get_vars() { return {}; }
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Num* clone() const;
-        void deep_delete() { }
         E* desugar() { return this; }
     };
 
@@ -50,14 +47,11 @@ namespace r0
         Bool(tbool v) { value = v; }
         tbool value;
         std::list<E*> get_childs() { return {}; }
-        std::list<std::string> get_vars() { return {}; }
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Bool* clone() const;
-        void deep_delete() { }
         E* desugar() { return this; }
     };
 
@@ -65,14 +59,11 @@ namespace r0
     {
         Read() { }
         std::list<E*> get_childs() { return {}; }
-        std::list<std::string> get_vars() { return {}; }
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Read* clone() const;
-        void deep_delete() { }
         E* desugar() { return this; }
     };
 
@@ -83,14 +74,11 @@ namespace r0
         E* l;
         E* r;
         std::list<E*> get_childs() { return {l, r}; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Binop* clone() const;
-        void deep_delete() { l->deep_delete(); r->deep_delete(); delete l; delete r; }
         E* desugar() { l = l->desugar(); r = r->desugar(); return this; }
     };
 
@@ -100,14 +88,11 @@ namespace r0
         u_ops op;
         E* v;
         std::list<E*> get_childs() { return {v}; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Unop* clone() const;
-        void deep_delete() { v->deep_delete(); delete v; }
         E* desugar() { v = v->desugar(); return this; }
     };
 
@@ -117,14 +102,13 @@ namespace r0
         Var(std::string varname, int t) : name(varname) { this->t = t; } 
         std::string name;
         std::list<E*> get_childs() { return {}; }
-        std::list<std::string> get_vars() { return {name}; }
-        void uniquify(std::unordered_map<std::string, std::string>);
+        std::list<std::string> get_vars() override { return {name}; }
+        void uniquify(std::unordered_map<std::string, std::string>) override;
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Var* clone() const;
-        void deep_delete() { }
         E* desugar() { return this; }
         inline void fix_trustme(int t, std::unordered_map<std::string, int>&);
     };
@@ -134,14 +118,12 @@ namespace r0
         GlobalVar(std::string varname) { name = varname; }
         std::string name;
         std::list<E*> get_childs() { return {}; }
-        std::list<std::string> get_vars() { return {}; }
-        void uniquify(std::unordered_map<std::string, std::string>);
+        void uniquify(std::unordered_map<std::string, std::string>) override;
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         GlobalVar* clone() const;
-        void deep_delete() { }
         E* desugar() { return this; }
     };
 
@@ -157,19 +139,21 @@ namespace r0
             func(func), args(ee), t_tentative(t) { }
         E* func;
         std::list<E*> args;
-        std::list<E*> get_childs() { return args; }
-        std::list<std::string> get_vars();
+        std::list<E*> get_childs()
+        {
+            std::list<E*> args_cpy = args;
+            args_cpy.push_back(func);
+            return args_cpy;
+        }
         // an extra t is necessary because we use existing t to check for first
         // initialization on type_check, so t has to remain TUNKNOWN until
         // type_check runs at least once
         type t_tentative;
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Call* clone() const;
-        void deep_delete();
         E* desugar();
     };
 
@@ -180,14 +164,12 @@ namespace r0
         E* ve;
         E* be;
         std::list<E*> get_childs() { return {ve, be}; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string>);
+        void uniquify(std::unordered_map<std::string, std::string>) override;
         int t_check(std::unordered_map<std::string , int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Let* clone() const;
-        void deep_delete() { ve->deep_delete(); be->deep_delete(); delete ve; delete be; }
         E* desugar() { ve = ve->desugar(); be = be->desugar(); return this; }
     };
 
@@ -198,15 +180,11 @@ namespace r0
         E* thene;
         E* elsee;
         std::list<E*> get_childs() { return { conde, thene, elsee}; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         If* clone() const;
-        void deep_delete() { conde->deep_delete(); thene->deep_delete(); elsee->deep_delete();
-            delete conde; delete thene; delete elsee; }
         E* desugar() { conde = conde->desugar(); thene = thene->desugar(); elsee = elsee->desugar(); return this;}
     };
 
@@ -215,14 +193,11 @@ namespace r0
         Vector(std::list<E*> ee) : elist(ee) { }
         std::list<E*> elist;
         std::list<E*> get_childs() { return elist; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string>);
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Vector* clone() const;
-        void deep_delete();
         E* desugar();
     };
 
@@ -234,14 +209,11 @@ namespace r0
         E* vec;
         int index;
         std::list<E*> get_childs() { return { vec }; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string> m) { vec->uniquify(m); }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         VectorRef* clone() const { return new VectorRef(vec->clone(), index); }
-        void deep_delete() { vec->deep_delete(); delete vec; }
         E* desugar() { vec = vec->desugar(); return this; }
     };
 
@@ -252,14 +224,11 @@ namespace r0
         int index;
         E* asg;
         std::list<E*> get_childs() { return { vec, asg }; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string> m) { vec->uniquify(m); asg->uniquify(m); }
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         VectorSet* clone() const { return new VectorSet(vec->clone(), index, asg->clone()); }
-        void deep_delete() { vec->deep_delete(); asg->deep_delete(); delete vec; delete asg; }
         E* desugar() { vec = vec->desugar(); asg = asg->desugar(); return this; };
     };
 
@@ -269,14 +238,12 @@ namespace r0
         std::vector<std::string> args;
         E* body;
         std::list<E*> get_childs() { return { body }; }
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string> m);
+        void uniquify(std::unordered_map<std::string, std::string> m) override;
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
         Lambda* clone() const { return new Lambda(args, body->clone()); }
-        void deep_delete() { body->deep_delete(); delete body; }
         E* desugar() { body = body->desugar(); return this; };
     };
 
@@ -284,9 +251,7 @@ namespace r0
     /********* Below are syntactic sugars *********/
     struct Sugar : E
     {
-        std::list<E*> get_childs();
-        std::list<std::string> get_vars();
-        void uniquify(std::unordered_map<std::string, std::string>);
+        void uniquify(std::unordered_map<std::string, std::string>) override;
         int t_check(std::unordered_map<std::string, int>&);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
@@ -297,8 +262,8 @@ namespace r0
     {
         Begin(std::list<E*> exps) : elist(exps) { }
         std::list<E*> elist;
+        std::list<E*> get_childs();
         Begin* clone() const;
-        void deep_delete();
         E* desugar();
     };
 
