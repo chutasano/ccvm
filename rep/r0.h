@@ -19,7 +19,7 @@ namespace r0
         virtual std::list<std::reference_wrapper<E*> > get_childs() = 0;
         virtual std::list<std::string> get_vars();
         virtual void uniquify(std::unordered_map<std::string, std::string>);
-        virtual int t_check(std::unordered_map<std::string, int>&) = 0;
+        virtual int t_check(std::unordered_map<std::string, int>&, bool force = false) = 0;
         virtual E* lambda_lift(const std::unordered_map<std::string, int>&);
         virtual c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                                std::vector<c0::AS*> &stmts,
@@ -36,7 +36,7 @@ namespace r0
         Num(int64_t v) { value = v; }
         int64_t value;
         std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -48,7 +48,7 @@ namespace r0
         Bool(tbool v) { value = v; }
         tbool value;
         std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -59,7 +59,7 @@ namespace r0
     {
         Read() { }
         std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -73,7 +73,7 @@ namespace r0
         E* l;
         E* r;
         std::list<std::reference_wrapper<E*> > get_childs() { return {l, r}; }
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -86,7 +86,7 @@ namespace r0
         u_ops op;
         E* v;
         std::list<std::reference_wrapper<E*> > get_childs() { return {v}; }
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -101,7 +101,7 @@ namespace r0
         std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
         std::list<std::string> get_vars() override { return {name}; }
         void uniquify(std::unordered_map<std::string, std::string>) override;
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -115,7 +115,7 @@ namespace r0
         std::string name;
         std::list<std::reference_wrapper<E*> > get_childs() { return {}; }
         void uniquify(std::unordered_map<std::string, std::string>) override;
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -144,7 +144,7 @@ namespace r0
         // initialization on type_check, so t has to remain TUNKNOWN until
         // type_check runs at least once
         type t_tentative;
-        int t_check(std::unordered_map<std::string, int>&);
+        int t_check(std::unordered_map<std::string, int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -159,7 +159,7 @@ namespace r0
         E* be;
         std::list<std::reference_wrapper<E*> > get_childs() { return {ve, be}; }
         void uniquify(std::unordered_map<std::string, std::string>) override;
-        int t_check(std::unordered_map<std::string , int>&);
+        int t_check(std::unordered_map<std::string , int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -173,7 +173,7 @@ namespace r0
         E* thene;
         E* elsee;
         std::list<std::reference_wrapper<E*> > get_childs() { return { conde, thene, elsee}; }
-        int t_check(std::unordered_map<std::string, int>&);
+        int t_check(std::unordered_map<std::string, int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -186,7 +186,7 @@ namespace r0
         std::list<E*> elist;
         std::list<std::reference_wrapper<E*> > get_childs()
         { return std::list<std::reference_wrapper<E*> >(elist.begin(), elist.end()); }
-        int t_check(std::unordered_map<std::string, int>&);
+        int t_check(std::unordered_map<std::string, int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -201,7 +201,7 @@ namespace r0
         E* vec;
         int index;
         std::list<std::reference_wrapper<E*> > get_childs() { return { vec }; }
-        int t_check(std::unordered_map<std::string, int>&);
+        int t_check(std::unordered_map<std::string, int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -215,7 +215,7 @@ namespace r0
         int index;
         E* asg;
         std::list<std::reference_wrapper<E*> > get_childs() { return { vec, asg }; }
-        int t_check(std::unordered_map<std::string, int>&);
+        int t_check(std::unordered_map<std::string, int>&, bool force = false);
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
                        std::vector<c0::F> &c0fs) const;
@@ -224,12 +224,19 @@ namespace r0
 
     struct Lambda : E
     {
-        Lambda(std::vector<std::string> args, E* body) : args(args), body(body) { }
-        std::vector<std::string> args;
+        Lambda(std::vector<Var> args, E* body) : args(args), body(body) { }
+        Lambda(std::vector<std::string> args, E* body) : body(body)
+        {
+            for (const std::string &s : args)
+            {
+                this->args.emplace_back(s);
+            }
+        }
+        std::vector<Var> args;
         E* body;
         std::list<std::reference_wrapper<E*> > get_childs() { return { body }; }
         void uniquify(std::unordered_map<std::string, std::string> m) override;
-        int t_check(std::unordered_map<std::string, int>&);
+        int t_check(std::unordered_map<std::string, int>&, bool force = false);
         E* lambda_lift(const std::unordered_map<std::string, int>&) override;
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
@@ -242,7 +249,7 @@ namespace r0
     struct Sugar : E
     {
         void uniquify(std::unordered_map<std::string, std::string>) override;
-        int t_check(std::unordered_map<std::string, int>&) override;
+        int t_check(std::unordered_map<std::string, int>&, bool force = false) override;
         E* lambda_lift(const std::unordered_map<std::string, int>&) override;
         c0::Arg* to_c0(std::unordered_map<std::string, int> &vars,
                        std::vector<c0::AS*> &stmts,
@@ -265,14 +272,16 @@ namespace r0
         F(const F &obj);
         std::string name;
         std::vector<Var> args;
+        std::unordered_map<std::string, int> v2type;
         int t;
         E* e;
         F clone() const;
         void deep_delete() { this->e->deep_delete(); delete this->e; }
         bool is_unique() const;
         void uniquify(std::unordered_map<std::string, std::string>);
-        void type_check(std::unordered_map<std::string, int> vars);
+        void type_check(std::unordered_map<std::string, int> vars, bool force = false);
         void generate_fun_type(std::unordered_map<std::string, int> &vars);
+        void lambda_lift();
         void flatten(std::vector<c0::F> &c0fs) const;
         void desugar();
     };
@@ -289,7 +298,8 @@ namespace r0
         void deep_delete();
         bool is_unique() const;
         void uniquify();
-        void type_check();
+        void type_check(bool force = false);
+        void lambda_lift();
         c0::P flatten() const;
         void desugar();
     };

@@ -101,9 +101,9 @@ static r0::E* letchain(int chaincount)
     else
     {
         return new r0::Let("chaincount" + to_string(chaincount), 
-                new r0::Num(0),
-                new r0::Binop(B_PLUS, new r0::Var("chaincount" + to_string(chaincount)),
-                    letchain(chaincount-1)));
+                           new r0::Num(0),
+                           new r0::Binop(B_PLUS, new r0::Var("chaincount" + to_string(chaincount)),
+                                         letchain(chaincount-1)));
     }
 }
 
@@ -472,70 +472,69 @@ void test_all(bool run_only_last = false)
             t(v1let, 64, 128);
         }
 
-    }
+        ts("Simple Fibonacci w/ Recursion");
+        {
+            NUM(0);
+            NUM(1);
+            NNUM(2);
+            r0::Var n = r0::Var("n", TNUM);
+            auto nref = &n;
+            EQ(nref, n0);
+            EQ(nref, n1);
+            PLUS(nref, nn2);
+            PLUS(nref, nn1);
+            UPTR(r0::Call, fibsub2, "simple_fib", { bplus_nref_nn2 });
+            UPTR(r0::Call, fibsub1, "simple_fib", { bplus_nref_nn1 });
+            PLUS(fibsub2, fibsub1);
+            IF(fib_eq1, beq_nref_n1, n1, bplus_fibsub2_fibsub1);
+            IF(fib_body, beq_nref_n0, n0, fib_eq1);
+            r0::F fib = r0::F("simple_fib", {n}, TNUM, fib_body);
+            NUM(10);
+            UPTR (r0::Call, callfib, "simple_fib", { n10 });
+            r0::F main = r0::F("main", { }, callfib);
+            r0::P prog = r0::P({fib, main }, "main", 2048);
+            t(prog, 55);
+        }
 
-    ts("Simple Fibonacci w/ Recursion");
-    {
-        NUM(0);
-        NUM(1);
-        NNUM(2);
-        r0::Var n = r0::Var("n", TNUM);
-        auto nref = &n;
-        EQ(nref, n0);
-        EQ(nref, n1);
-        PLUS(nref, nn2);
-        PLUS(nref, nn1);
-        UPTR(r0::Call, fibsub2, "simple_fib", { bplus_nref_nn2 });
-        UPTR(r0::Call, fibsub1, "simple_fib", { bplus_nref_nn1 });
-        PLUS(fibsub2, fibsub1);
-        IF(fib_eq1, beq_nref_n1, n1, bplus_fibsub2_fibsub1);
-        IF(fib_body, beq_nref_n0, n0, fib_eq1);
-        r0::F fib = r0::F("simple_fib", {n}, TNUM, fib_body);
-        NUM(10);
-        UPTR (r0::Call, callfib, "simple_fib", { n10 });
-        r0::F main = r0::F("main", { }, callfib);
-        r0::P prog = r0::P({fib, main }, "main", 2048);
-        t(prog, 55);
-    }
+        ts("Function with lots of args");
+        {
+            r0::Var n0 = r0::Var("n0", TNUM); r0::Var n1 = r0::Var("n1", TNUM);
+            r0::Var n2 = r0::Var("n2", TNUM); r0::Var n3 = r0::Var("n3", TNUM);
+            r0::Var n4 = r0::Var("n4", TNUM); r0::Var n5 = r0::Var("n5", TNUM);
+            r0::Var n6 = r0::Var("n6", TNUM); r0::Var n7 = r0::Var("n7", TNUM);
+            r0::Var n8 = r0::Var("n8", TNUM); r0::Var n9 = r0::Var("n9", TNUM);
+            r0::Var n10 = r0::Var("n10", TNUM); r0::Var n11 = r0::Var("n11", TNUM);
+            r0::Var n12 = r0::Var("n12", TNUM);
+            auto rn0 = &n0; auto rn1 = &n1; auto rn2 = &n2; auto rn3 = &n3;
+            auto rn4 = &n4; auto rn5 = &n5; auto rn6 = &n6; auto rn7 = &n7;
+            auto rn8 = &n8; auto rn9 = &n9; auto rn10 = &n10; auto rn11 = &n11;
+            auto rn12 = &n12;
+            PLUSN(p01, rn0, rn1); PLUSN(p02, p01, rn2); PLUSN(p03, p02, rn3);
+            PLUSN(p04, p03, rn4); PLUSN(p05, p04, rn5); PLUSN(p06, p05, rn6);
+            PLUSN(p07, p06, rn7); PLUSN(p08, p07, rn8); PLUSN(p09, p08, rn9);
+            PLUSN(p010, p09, rn10); PLUSN(p011, p010, rn11);  PLUSN(p012, p011, rn12);
+            r0::F add_12_nums = r0::F("add_12_nums",
+                                      {n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12},
+                                      TNUM, p012);
+            NUM(20);
+            UPTR(r0::Call, call_12_nums, "add_12_nums", {n20,n20,n20,n20,n20,n20,n20,n20,n20,n20,n20,n20, n20});
+            r0::F main = r0::F("main", { }, call_12_nums);
+            r0::P prog = r0::P({add_12_nums, main }, "main", 2048);
+            t(prog, 20*13);
+        }
 
-    ts("Function with lots of args");
-    {
-        r0::Var n0 = r0::Var("n0", TNUM); r0::Var n1 = r0::Var("n1", TNUM);
-        r0::Var n2 = r0::Var("n2", TNUM); r0::Var n3 = r0::Var("n3", TNUM);
-        r0::Var n4 = r0::Var("n4", TNUM); r0::Var n5 = r0::Var("n5", TNUM);
-        r0::Var n6 = r0::Var("n6", TNUM); r0::Var n7 = r0::Var("n7", TNUM);
-        r0::Var n8 = r0::Var("n8", TNUM); r0::Var n9 = r0::Var("n9", TNUM);
-        r0::Var n10 = r0::Var("n10", TNUM); r0::Var n11 = r0::Var("n11", TNUM);
-        r0::Var n12 = r0::Var("n12", TNUM);
-        auto rn0 = &n0; auto rn1 = &n1; auto rn2 = &n2; auto rn3 = &n3;
-        auto rn4 = &n4; auto rn5 = &n5; auto rn6 = &n6; auto rn7 = &n7;
-        auto rn8 = &n8; auto rn9 = &n9; auto rn10 = &n10; auto rn11 = &n11;
-        auto rn12 = &n12;
-        PLUSN(p01, rn0, rn1); PLUSN(p02, p01, rn2); PLUSN(p03, p02, rn3);
-        PLUSN(p04, p03, rn4); PLUSN(p05, p04, rn5); PLUSN(p06, p05, rn6);
-        PLUSN(p07, p06, rn7); PLUSN(p08, p07, rn8); PLUSN(p09, p08, rn9);
-        PLUSN(p010, p09, rn10); PLUSN(p011, p010, rn11);  PLUSN(p012, p011, rn12);
-        r0::F add_12_nums = r0::F("add_12_nums",
-                {n0,n1,n2,n3,n4,n5,n6,n7,n8,n9,n10,n11,n12},
-                TNUM, p012);
-        NUM(20);
-        UPTR(r0::Call, call_12_nums, "add_12_nums", {n20,n20,n20,n20,n20,n20,n20,n20,n20,n20,n20,n20, n20});
-        r0::F main = r0::F("main", { }, call_12_nums);
-        r0::P prog = r0::P({add_12_nums, main }, "main", 2048);
-        t(prog, 20*13);
-    }
-
-    ts("Lambda (no closure)");
-    {
-        NUM(123); NUM(321); NUM(111);
-        VAR(x1); VAR(x2); VAR(x3);
-        PLUS(vx2, vx3);
-        PLUSN(sum3, vx1, bplus_vx2_vx3);
-        LAMBDA(add3num, {"x1","x2","x3"}, sum3);
-        VAR(r0add3num);
-        UPTR(r0::Call, calladd3, vr0add3num, {n123, n321, n111});
-        LET(main_test, r0add3num, add3num, calladd3);
-        t(main_test, 123+321+111);
+        ts("Lambda (no closure)");
+        {
+            NUM(123); NUM(321); NUM(111);
+            VAR(x1); VAR(x2); VAR(x3);
+            PLUS(vx2, vx3);
+            PLUSN(sum3, vx1, bplus_vx2_vx3);
+            LAMBDA(add3num, {"x1","x2","x3"}, sum3);
+            VAR(r0add3num);
+            UPTR(r0::Call, calladd3, vr0add3num, {n123, n321, n111});
+            LET(main_test, r0add3num, add3num, calladd3);
+            t(main_test, 123+321+111);
+        }
     }
 
     ts("Lambda (closure)");

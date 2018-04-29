@@ -179,7 +179,7 @@ void P::fix()
                     i->dst = new Reg("rax");
                     it = this->instr.insert(++it, new ISrcDst(MOVQ, i->dst, local_dst));
                 }
-                if (i->instr == LEAQ &&
+                else if (i->instr == LEAQ &&
                         typeid(*(i->src)) == typeid(Global) &&
                         typeid(*(i->dst)) == typeid(Mem))
                 {
@@ -189,7 +189,7 @@ void P::fix()
                     it = this->instr.insert(it, leaq);
                 }
                 // we need to fix two args both being memory references
-                else if (typeid(*(i->src)) == typeid(Mem) &&
+                else if ((typeid(*(i->src)) == typeid(Mem) || typeid(*(i->src)) == typeid(Global)) &&
                         typeid(*(i->dst)) == typeid(Mem))
                 {
                     ISrcDst* movq = new ISrcDst(MOVQ, i->src, new Reg("rax"));

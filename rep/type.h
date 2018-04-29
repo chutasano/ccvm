@@ -31,6 +31,21 @@ enum tvoid
     TV_VOID = 0
 };
 
+inline bool type_is_func(int t)
+{
+    return t > TFUN;
+}
+
+inline bool type_is_vec(int t)
+{
+    return (t < TFUN) && (t > TVEC);
+}
+
+inline bool type_is_ref(int t)
+{
+    return type_is_func(t) || type_is_vec(t);
+}
+
 inline std::string type2name(int n)
 {
     switch(n)

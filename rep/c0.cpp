@@ -9,7 +9,26 @@
 using namespace std;
 using namespace c0;
 
-static unordered_map<string, unsigned int> count;
+// figures out whether to use movq or leaq depending on the type of src
+// note that src is a c0::Arg while dst is x0s::Dst
+static inline x0s::ISrcDst* x0s_move(const unordered_map<string, int> &vmap, const Arg* src, x0s::Dst* dst)
+{
+    bool is_ref;
+    if (typeid(*src) == typeid(Var))
+    {
+        //is_ref = false;
+        is_ref = type_is_func(vmap.at(static_cast<const Var*>(src)->name));
+    }
+    else if (typeid(*src) == typeid(GlobalVar))
+    {
+        is_ref = true;
+    }
+    else
+    {
+        is_ref = false;
+    }
+    return new x0s::ISrcDst(is_ref ? LEAQ : MOVQ, src->to_arg(), dst);
+}
 
 x0s::Arg* Var::to_arg() const
 {
@@ -26,26 +45,19 @@ x0s::Arg* Num::to_arg() const
     return new x0s::Con(this->value);
 }
 
-list<x0s::I*> Arg::select(x0s::Var* var)
+list<x0s::I*> Arg::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     // moving globals should be done as lea because globals are always
     // memory locations
-    if (typeid(*this) == typeid(GlobalVar))
-    {
-        return { new x0s::ISrcDst(LEAQ, this->to_arg(), var) };
-    }
-    else
-    {
-        return { new x0s::ISrcDst(MOVQ, this->to_arg(), var) };
-    }
+    return { x0s_move(vmap, this, var) };
 }
 
-list<x0s::I*> Read::select(x0s::Var* var)
+list<x0s::I*> Read::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     return { new x0s::ICall(new x0s::Global("_lang_read_num"), { }, var) };
 }
 
-list<x0s::I*> Binop::select(x0s::Var* var)
+list<x0s::I*> Binop::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     switch(this->op)
     {
@@ -83,7 +95,7 @@ list<x0s::I*> Binop::select(x0s::Var* var)
     }
 }
 
-list<x0s::I*> Unop::select(x0s::Var* var)
+list<x0s::I*> Unop::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     switch(this->op)
     {
@@ -99,7 +111,7 @@ list<x0s::I*> Unop::select(x0s::Var* var)
     };
 }
 
-list<x0s::I*> FunCall::select(x0s::Var* var)
+list<x0s::I*> FunCall::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     vector<x0s::Arg*> x0sargs;
     for (auto a : args)
@@ -109,7 +121,7 @@ list<x0s::I*> FunCall::select(x0s::Var* var)
     return { new x0s::ICall(func->to_arg(), x0sargs, var) };
 }
 
-list<x0s::I*> Alloc::select(x0s::Var* var)
+list<x0s::I*> Alloc::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     int total_size = 8*(1+size);
     // TODO abstractify this a bit more to reuse code
@@ -126,27 +138,26 @@ list<x0s::I*> Alloc::select(x0s::Var* var)
              new x0s::ISrcDst(ADDQ, new x0s::Con(total_size), new x0s::Reg("r15")) };
 }
 
-list<x0s::I*> VecRef::select(x0s::Var* var)
+list<x0s::I*> VecRef::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("r8")),
              new x0s::ISrcDst(MOVQ, new x0s::Deref(new x0s::Reg("r8"), 8*(1+index)), var) };
 }
 
-list<x0s::I*> VecSet::select(x0s::Var* var)
+list<x0s::I*> VecSet::select(const unordered_map<string, int> &vmap, x0s::Var* var)
 {
     return { new x0s::ISrcDst(MOVQ, vec->to_arg(), new x0s::Reg("r8")),
-             new x0s::ISrcDst(MOVQ, asg->to_arg(),
-                      new x0s::Deref(new x0s::Reg("r8"), 8*(1+index))),
+        x0s_move(vmap, asg, new x0s::Deref(new x0s::Reg("r8"), 8*(1+index))),
+             //new x0s::ISrcDst(MOVQ, asg->to_arg(),
              new x0s::ISrcDst(MOVQ, new x0s::Con(TV_VOID), var) };
 }
 
-list<x0s::I*> S::select()
+list<x0s::I*> S::select(const unordered_map<string, int> &vmap)
 {
-    return this->e->select(new x0s::Var(this->v));
+    return this->e->select(vmap, new x0s::Var(this->v));
 }
 
-
-list<x0s::I*> If::select()
+list<x0s::I*> If::select(const unordered_map<string, int> &vmap)
 {
     x0s::Dst* var = new x0s::Reg("rax"); // TODO?
     x0s::Var* tv = new x0s::Var(this->v);
@@ -179,7 +190,7 @@ list<x0s::I*> If::select()
     list<x0s::I*> elsei;
     for (auto s : elses)
     {
-        list<x0s::I*> is = s->select();
+        list<x0s::I*> is = s->select(vmap);
         elsei.splice(elsei.end(), is);
     }
     elsei.push_back(new x0s::ISrcDst(MOVQ, elsev->to_arg(), tv));
@@ -189,7 +200,7 @@ list<x0s::I*> If::select()
     list<x0s::I*> theni;
     for (auto s : thens)
     {
-        list<x0s::I*> is = s->select();
+        list<x0s::I*> is = s->select(vmap);
         theni.splice(theni.end(), is);
     }
     theni.push_back(new x0s::ISrcDst(MOVQ, thenv->to_arg(), tv));
@@ -202,7 +213,7 @@ x0s::F F::select() const
     list<x0s::I*> instrs;
     for (auto s : this->stmts)
     {
-        list<x0s::I*> is = s->select();
+        list<x0s::I*> is = s->select(vars);
         instrs.splice(instrs.end(), is);
     }
     instrs.push_back(new x0s::IRet(this->arg->to_arg()));

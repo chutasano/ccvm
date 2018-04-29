@@ -3,6 +3,7 @@
 #include <list>
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 #include "operators.h"
 #include "type.h"
@@ -13,13 +14,13 @@ namespace c0
     struct E
     {
         virtual ~E() { }
-        virtual std::list<x0s::I*> select(x0s::Var*) = 0;
+        virtual std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) = 0;
     };
 
     struct Arg : E
     {
         virtual ~Arg() { }
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
         virtual x0s::Arg* to_arg() const = 0;
     };
 
@@ -44,25 +45,18 @@ namespace c0
         x0s::Arg* to_arg() const;
     };
 
-    struct Global : Arg
-    {
-        Global(std::string varname) : name(varname) { }
-        std::string name;
-        x0s::Arg* to_arg() const;
-    };
-
     // abstract statement either contains an if or a statement
     struct AS
     {
         virtual ~AS() {  }
-        virtual std::list<x0s::I*> select() = 0;
+        virtual std::list<x0s::I*> select(const std::unordered_map<std::string, int>&) = 0;
     };
 
 
     struct Read : E
     {
         Read() { }
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
     };
 
     struct Binop : E
@@ -72,7 +66,7 @@ namespace c0
         b_ops op;
         Arg* l;
         Arg* r;
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
     };
 
     struct Unop : E
@@ -81,7 +75,7 @@ namespace c0
         ~Unop() { delete v; }
         u_ops op;
         Arg* v;
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
     };
 
     struct FunCall : E
@@ -90,7 +84,7 @@ namespace c0
         ~FunCall() { for (auto a : args) delete a; }
         Arg* func;
         std::vector<Arg*> args;
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
     };
 
     struct Alloc : E
@@ -98,7 +92,7 @@ namespace c0
         Alloc(int size, int tag) : size(size), tag(tag) { }
         int size;
         int tag;
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
     };
 
     struct VecRef : E
@@ -107,7 +101,7 @@ namespace c0
         ~VecRef() { delete vec; }
         Var* vec;
         int index;
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
     };
 
     struct VecSet : E
@@ -117,7 +111,7 @@ namespace c0
         Var* vec;
         int index;
         Arg* asg;
-        std::list<x0s::I*> select(x0s::Var*);
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&, x0s::Var*) override;
     };
 
     //stmt
@@ -127,7 +121,7 @@ namespace c0
         ~S() { delete e; }
         std::string v;
         E* e;
-        std::list<x0s::I*> select();
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&);
     };
 
     struct If : AS
@@ -141,7 +135,7 @@ namespace c0
         std::vector<AS*> elses;
         Arg* thenv;
         Arg* elsev;
-        std::list<x0s::I*> select();
+        std::list<x0s::I*> select(const std::unordered_map<std::string, int>&);
     };
 
     struct F
@@ -159,7 +153,7 @@ namespace c0
         Arg* arg; //ret
         int t;
         x0s::F select() const;
-   };
+    };
 
     struct P
     {

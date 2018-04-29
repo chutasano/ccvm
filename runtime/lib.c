@@ -12,6 +12,7 @@ extern int64_t _LANG_NUM_T;
 extern int64_t _LANG_BOOL_T;
 extern int64_t _LANG_VOID_T;
 extern int64_t _LANG_VEC_T;
+extern int64_t _LANG_FUN_T;
 void* _LANG_HEAP_END;
 
 static void* buf;
@@ -188,9 +189,13 @@ void _lang_print_vec(int64_t* start)
         {
             _lang_print_void_impl(start[i], 0);
         }
-        else
+        else if ((tag[i] > _LANG_VEC_T) && (tag[i] < _LANG_FUN_T))
         {
             _lang_print_vec(start+i);
+        }
+        else
+        {
+            printf("func ");
         }
         printf(" ");
     }

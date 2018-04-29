@@ -28,6 +28,8 @@ static string to_asm(r0::P &p)
 {
     p.uniquify();
     p.type_check();
+    p.lambda_lift();
+    p.type_check(true);
     c0::P c = p.flatten();
     x0s::P xs = c.select();
     x0::P x0 = xs.assign();

@@ -238,6 +238,14 @@ bool P::is_unique() const
     return true;
 }
 
+void P::lambda_lift()
+{
+    for (F &f : funcs)
+    {
+        f.lambda_lift();
+    }
+}
+
 c0::P P::flatten() const
 {
     vector<c0::F> cfs;
@@ -250,14 +258,17 @@ c0::P P::flatten() const
     return c0::P(cfs, to_run, heap_size);
 }
 
-void P::type_check()
+void P::type_check(bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        vec_type.clear();
-        fun_type.clear();
-        vec_type[TVEC] = { };
-        fun_type[TFUN] = { };
+        if (t == TUNKNOWN)
+        {
+            vec_type.clear();
+            fun_type.clear();
+            vec_type[TVEC] = { };
+            fun_type[TFUN] = { };
+        }
         unordered_map<string, int> vmap;
         for (F &f : funcs)
         {
@@ -265,8 +276,11 @@ void P::type_check()
         }
         for (F &f : funcs)
         {
-            f.type_check(vmap);
-            t = fun_type.at(f.t).back();
+            f.type_check(vmap, force);
+            if (f.name == to_run)
+            {
+                t = fun_type.at(f.t).back();
+            }
         }
     }
 }
@@ -326,6 +340,11 @@ bool F::is_unique() const
     return varnames.size() == uniquenames.size();
 }
 
+void F::lambda_lift()
+{
+    e = e->lambda_lift(v2type);
+}
+
 // P is expected to feed in an empty vector
 void F::flatten(vector<c0::F> &c0fs) const
 {
@@ -365,29 +384,30 @@ void F::generate_fun_type(unordered_map<string, int> &vars)
         }
         ftype.push_back(t);
         t = add_ftype(ftype);
-        vars[name] = t;
     }
+    vars[name] = t;
 }
 
-void F::type_check(unordered_map<string, int> vars)
+void F::type_check(unordered_map<string, int> vars, bool force)
 {
+    vars[name] = t;
     for (const Var &v : args)
     {
         vars[v.name] = v.t;
     }
-    int t_expected = e->t_check(vars);
-    if (fun_type.at(t).back() == TUNKNOWN)
+    int t_expected = e->t_check(vars, force);
+    if (fun_type.at(t).back() == TUNKNOWN || force)
     {
         vector<int> ftype_cpy = fun_type.at(t);
         ftype_cpy.back() = t_expected;
         t = add_ftype(ftype_cpy);
-        vars[name] = t;
     }
-    else if (fun_type.at(t).back() != t_expected)
+    if (fun_type.at(t).back() != t_expected)
     {
         cerr << "F::type_check: expected return type mismatch with calculated type\n";
         exit(1);
     }
+    v2type = vars;
 }
 
 void F::desugar()
@@ -405,7 +425,7 @@ c0::Arg* Num::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, ve
      return new c0::Num(this->value);
 }
 
-int Num::t_check(unordered_map<string, int> &vmap)
+int Num::t_check(unordered_map<string, int> &vmap, bool force)
 {
     t = TNUM;
     return TNUM;
@@ -421,7 +441,7 @@ c0::Arg* Bool::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, v
      return new c0::Num(static_cast<int>(this->value));
 }
 
-int Bool::t_check(unordered_map<string, int> &vmap)
+int Bool::t_check(unordered_map<string, int> &vmap, bool force)
 {
     t = TBOOL;
     return TBOOL;
@@ -440,7 +460,7 @@ c0::Arg* Read::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, v
     return new c0::Var(s);
 }
 
-int Read::t_check(unordered_map<string, int> &vmap)
+int Read::t_check(unordered_map<string, int> &vmap, bool force)
 {
     t = TNUM;
     return TNUM;
@@ -461,12 +481,12 @@ c0::Arg* Binop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, 
     return new c0::Var(s);
 }
 
-int Binop::t_check(unordered_map<string, int> &vmap)
+int Binop::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        int lt = this->l->t_check(vmap);
-        int rt = this->r->t_check(vmap);
+        int lt = this->l->t_check(vmap, force);
+        int rt = this->r->t_check(vmap, force);
         if (lt == TERROR || lt == TUNKNOWN ||
             rt == TERROR || rt == TUNKNOWN)
         {
@@ -529,11 +549,11 @@ c0::Arg* Unop::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, v
     return new c0::Var(s);
 }
 
-int Unop::t_check(unordered_map<string, int> &vmap)
+int Unop::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        int vt = this->v->t_check(vmap);
+        int vt = this->v->t_check(vmap, force);
         int vt_expected;
         if (vt == TERROR || vt ==TUNKNOWN)
         {
@@ -588,7 +608,7 @@ void Var::uniquify(unordered_map<string, string> m)
     else
     {
         cerr << "Uniquify var: var ref DNE: " << this->name << "\n";
-        exit(1);
+        assert(0);
     }
 }
 
@@ -597,9 +617,9 @@ c0::Arg* Var::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, ve
     return new c0::Var(this->name);
 }
 
-int Var::t_check(unordered_map<string, int> &vmap)
+int Var::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
         t = vmap.at(this->name);
     }
@@ -632,9 +652,9 @@ c0::Arg* GlobalVar::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
     return new c0::GlobalVar(this->name);
 }
 
-int GlobalVar::t_check(unordered_map<string, int> &vmap)
+int GlobalVar::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
         if (vmap.find(name) != vmap.end())
         {
@@ -668,13 +688,37 @@ c0::Arg* Call::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, v
     {
         c0args.push_back(e->to_c0(vars, stmts, c0fs));
     }
-    stmts.push_back(new c0::S(s, new c0::FunCall(func->to_c0(vars, stmts, c0fs), c0args)));
+    int ft = func->t_check(vars);
+    if (type_is_func(ft))
+    {
+        stmts.push_back(new c0::S(s, new c0::FunCall(func->to_c0(vars, stmts, c0fs), c0args)));
+    }
+    else if (type_is_vec(ft))
+    {
+        // TODO hacky way, let lambda_lift magically handle this case
+        // TODO super hack to make c0 destructors not double delete. fix properly
+        c0::Arg* vec = func->to_c0(vars, stmts, c0fs);
+        c0::Arg* vec2 = func->to_c0(vars, stmts, c0fs);
+        c0::Arg* vec3 = func->to_c0(vars, stmts, c0fs);
+        c0args.insert(c0args.begin(), vec);
+        string svec = gensym("r0CallVec");
+        string sfref = gensym("r0CallVecFunRef");
+        vars[svec] = func->t;
+        vars[sfref] = vec_type.at(ft).front();
+        stmts.push_back(new c0::S(svec, vec2));
+        stmts.push_back(new c0::S(sfref, new c0::VecRef(static_cast<c0::Var*>(vec3), 0)));
+        stmts.push_back(new c0::S(s, new c0::FunCall(new c0::Var(sfref), c0args)));
+    }
+    else
+    {
+        assert(0);
+    }
     return new c0::Var(s);
 }
 
-int Call::t_check(unordered_map<string, int> &vmap)
+int Call::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
         // no type specifier means that function must exist in our context
         // (ie: not a function from somewhere else like the runtime library)
@@ -683,12 +727,18 @@ int Call::t_check(unordered_map<string, int> &vmap)
         {
             int i = 0;
             //auto t_vec = fun_type.at(vmap.at(name));
-            const auto &t_vec = fun_type.at(func->t_check(vmap));
-            assert(args.size() == t_vec.size()-1);
+            int ft = func->t_check(vmap, force);
+            bool is_vec = type_is_vec(ft);
+            if (is_vec) // vecs are OK
+            {
+                ft = vec_type.at(func->t_check(vmap, force)).front();
+            }
+            const auto &t_vec = fun_type.at(ft);
+            assert(args.size() == t_vec.size()-1 - (is_vec? 1 : 0));
             for (E* e : args)
             {
-                int t_arg = e->t_check(vmap);
-                assert(t_arg == t_vec.at(i));
+                int t_arg = e->t_check(vmap, force);
+                assert(t_arg == t_vec.at(i + (is_vec? 1 : 0)));
                 i++;
             }
             t = t_vec.back();
@@ -697,7 +747,7 @@ int Call::t_check(unordered_map<string, int> &vmap)
         {
             for (E* e : args)
             {
-                e->t_check(vmap);
+                e->t_check(vmap, force);
             }
             t = t_tentative;
         }
@@ -731,12 +781,12 @@ c0::Arg* Let::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, ve
     return this->be->to_c0(vars, stmts, c0fs);
 }
 
-int Let::t_check(unordered_map<string, int> &vmap)
+int Let::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        vmap[this->name] = this->ve->t_check(vmap);
-        t = this->be->t_check(vmap);
+        vmap[this->name] = this->ve->t_check(vmap, force);
+        t = this->be->t_check(vmap, force);
     }
     return t;
 }
@@ -772,17 +822,17 @@ c0::Arg* If::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts, vec
     return new c0::Var(s);
 }
 
-int If::t_check(unordered_map<string, int> &vmap)
+int If::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        if (conde->t_check(vmap) != TBOOL)
+        if (conde->t_check(vmap, force) != TBOOL)
         {
             cerr << "If: cond expression does not have type bool\n";
             t = TERROR;
         }
-        int thent = thene->t_check(vmap);
-        int elset = elsee->t_check(vmap);
+        int thent = thene->t_check(vmap, force);
+        int elset = elsee->t_check(vmap, force);
         if (thent == elset)
         {
             t = thent; // if both are TERROR, we'll catch it from the ret anyway
@@ -822,25 +872,25 @@ c0::Arg* Vector::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts,
     return new c0::Var(s);
 }
 
-int Vector::t_check(unordered_map<string, int> &vmap)
+int Vector::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
         vector<int> types;
         for (E* e : elist)
         {
-            types.push_back(e->t_check(vmap));
+            types.push_back(e->t_check(vmap, force));
         }
         t = add_vtype(types);
     }
     return t;
 }
 
-int VectorRef::t_check(unordered_map<string, int> &vmap)
+int VectorRef::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        int t_vec = vec->t_check(vmap);
+        int t_vec = vec->t_check(vmap, force);
         vector<int> types = vec_type[t_vec];
         t = types[index];
     }
@@ -856,13 +906,13 @@ c0::Arg* VectorRef::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
     return new c0::Var(s);
 }
 
-int VectorSet::t_check(unordered_map<string, int> &vmap)
+int VectorSet::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        int t_vec = vec->t_check(vmap);
+        int t_vec = vec->t_check(vmap, force);
         vector<int> types = vec_type[t_vec];
-        if(types[index] == asg->t_check(vmap))
+        if(types[index] == asg->t_check(vmap, force))
         {
             t = TVOID;
         }
@@ -887,46 +937,55 @@ c0::Arg* VectorSet::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stm
 void Lambda::uniquify(unordered_map<string, string> m)
 {
     // manually uniquify function args
-    for (auto &s : args)
+    for (Var &v : args)
     {
         // overwrite if exists
-        m[s] = gensym(s);
-        s = m[s];
+        m[v.name] = gensym(v.name);
+        v.name = m[v.name];
     }
     body->uniquify(m);
 }
 
-int Lambda::t_check(unordered_map<string, int> &vmap)
+int Lambda::t_check(unordered_map<string, int> &vmap, bool force)
 {
-    if (t == TUNKNOWN)
+    if ((t == TUNKNOWN) || force)
     {
-        for (const string &s : args)
+        for (const Var &v : args)
         {
-            vmap[s] = TTRUSTME;
+            vmap[v.name] = (v.t == TUNKNOWN) ? TTRUSTME : v.t;
         }
-        int ret_t = body->t_check(vmap);
+        int ret_t = body->t_check(vmap, force);
         vector<int> this_ftype;
-        for (const string &s : args)
+        for (const Var &v : args)
         {
-            this_ftype.push_back(vmap.at(s));
+            this_ftype.push_back(vmap.at(v.name));
         }
         this_ftype.push_back(ret_t);
         t = add_ftype(this_ftype);
+        for (Var &v : args)
+        {
+            v.t = vmap.at(v.name);
+        }
     }
     return t;
 }
 
 E* Lambda::lambda_lift(const unordered_map<string, int> &vars)
 {
-    /*
     // TODO maybe use set in get_vars?
+    body = body->lambda_lift(vars);
     list<string> all_vars = body->get_vars();
-    sort(all_vars.begin(), all_vars.end());
+    vector<string> arg_names;
+    for(const Var &v : args)
+    {
+        arg_names.push_back(v.name);
+    }
+    all_vars.sort();
     all_vars.erase(unique(all_vars.begin(), all_vars.end()), all_vars.end());
     all_vars.erase(remove_if(all_vars.begin(), all_vars.end(),
-                             [this](string s) {
-                             return find(args.begin(), args.end(), s)
-                             != args.end(); }),
+                             [arg_names](string s) {
+                             return find(arg_names.begin(), arg_names.end(), s)
+                             != arg_names.end(); }),
                    all_vars.end());
     bool enable_closure = all_vars.size() > 0;
     //all_vars contain all variables that need to be captured in f
@@ -937,7 +996,6 @@ E* Lambda::lambda_lift(const unordered_map<string, int> &vars)
         ft.insert(ft.begin(), TTRUSTME);
         int new_t = add_ftype(ft); // reserve a spot in ftype
         // to_c0 is post type check so TTRUSTME must be unique
- 
         // vector should consist of (Func, capture1, capture2, ...)
         vector<int> vt = {new_t};
         for (const string &s : all_vars)
@@ -945,26 +1003,38 @@ E* Lambda::lambda_lift(const unordered_map<string, int> &vars)
             vt.push_back(vars.at(s));
         }
         int new_vec_t = add_vtype(vt);
-        fun_at.at(new_t).front() = new_vec_t;
-        // TODO NOT CONST
-        // fix up to_c0
-        string vector_name = gensym(s+"closure_vec");
-        Var* v_local_vector = new Vector(vector_name, new_vec_t);
-        fargs.insert(fargs.begin(), *v_local_vector);
-        fargs.emplace(fargs.begin(), vector_name, new_vec_t);
-        E* prev_ref = body;
-        int i=0;
-        // note: the vector_refs will be in reverse order, but
-        // it shouldn't matter?? maybe revisit this
-        for (const string &s : all_vars)
+        fun_type.at(new_t).front() = new_vec_t;
+        t = new_t;
         {
-            prev_ref = new Let(s, new VectorRef(v_local_vector, i), prev_ref);
-            i++;
+            // types are now complete, we need to now modify the current function
+            // and wrap it with lets to capture the variables
+            // arbitrary new function arg name
+            string vector_name = gensym("r0Lambdaclosure_vec");
+            Var* vec_var = new Var(vector_name, new_vec_t);
+            args.insert(args.begin(), Var(vector_name, new_vec_t));
+            E* prev_ref = body;
+            int i=1;
+            for (const string &s : all_vars)
+            {
+                // note: the vector_refs will be in reverse order, but
+                // it shouldn't matter?? maybe revisit this
+                prev_ref = new Let(s, new VectorRef(vec_var, i), prev_ref);
+                i++;
+            }
+            body = prev_ref;
         }
-        body = prev_ref;
-        int new_type = add_ftype(ft);
+        {
+            // lambda is called after uniquify, so we can't have conflicting names
+            list<E*> vec_elements = { this };
+            for (const string &s : all_vars)
+            {
+                vec_elements.push_back(new Var(s, vars.at(s)));
+            }
+            Vector* v = new Vector(vec_elements);
+            v->t = new_vec_t;
+            return v;
+        }
     }
-    */
     return this;
 }
 
@@ -972,15 +1042,14 @@ c0::Arg* Lambda::to_c0(unordered_map<string, int> &vars, vector<c0::AS*> &stmts,
 {
 
     string s = gensym("r0Lambda");
-
     vars[s] = t;
     std::vector<Var> fargs;
     const vector<int> &ft = fun_type.at(t);
 
     int i=0;
-    for (const string &s : args)
+    for (const Var &v : args)
     {
-        fargs.emplace_back(s, ft.at(i));
+        fargs.emplace_back(v.name, ft.at(i));
         i++;
     }
     F f(s, fargs, t, body);
@@ -995,7 +1064,7 @@ void Sugar::uniquify(unordered_map<string, string> a)
     exit(10);
 }
 
-int Sugar::t_check(unordered_map<string, int> &a)
+int Sugar::t_check(unordered_map<string, int> &a, bool force)
 {
     cerr << "Call desugar before using any r0->c0 functionality\n";
     exit(10);
